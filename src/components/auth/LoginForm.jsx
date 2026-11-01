@@ -4,13 +4,11 @@ import { Label } from '@/components/ui/label';
 import { IconInput, PasswordInput } from './IconInput.jsx';
 import { alertClass, inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from './styles.js';
 
-// Solo la parte visual del inicio de sesión.
-// La lógica (llamar al backend, guardar la sesión) sigue en App.jsx.
 export default function LoginForm({ onSubmit, busy, error, onCreateAccount }) {
   return (
     <div>
-      <h1 className="m-0 text-[30px] font-bold tracking-tight text-[#2A0E7A]">Iniciar sesión</h1>
-      <p className="mt-1.5 mb-7 text-sm text-[#8C87A3]">Qué bueno verte de nuevo.</p>
+      <h1 className="m-0 text-[30px] font-bold tracking-tight text-[#2A0E7A] dark:text-[#F4F2FA]">Iniciar sesión</h1>
+      <p className="mt-1.5 mb-7 text-sm text-[#8C87A3] dark:text-[#9D97B5]">Qué bueno verte de nuevo.</p>
 
       <form onSubmit={onSubmit} className="m-0 grid max-w-none gap-4">
         <div className="grid gap-2">
@@ -43,8 +41,8 @@ export default function LoginForm({ onSubmit, busy, error, onCreateAccount }) {
 
 export function Divider() {
   return (
-    <div className="my-3 flex items-center gap-3 text-xs text-[#ABA6C2]">
-      <span className="h-px flex-1 bg-[#ECE9F5]" />o<span className="h-px flex-1 bg-[#ECE9F5]" />
+    <div className="my-3 flex items-center gap-3 text-xs text-[#ABA6C2] dark:text-[#6B6485]">
+      <span className="h-px flex-1 bg-[#ECE9F5] dark:bg-[#261E3D]" />o<span className="h-px flex-1 bg-[#ECE9F5] dark:bg-[#261E3D]" />
     </div>
   );
 }

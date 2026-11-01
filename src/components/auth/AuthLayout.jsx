@@ -2,33 +2,29 @@ import '@fontsource/poppins/400.css';
 import '@fontsource/poppins/500.css';
 import '@fontsource/poppins/600.css';
 import '@fontsource/poppins/700.css';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
-// Marco de las pantallas de ingreso y registro.
-// Compu: tarjeta grande con el formulario a la izquierda y el panel violeta a la derecha.
-// Celular: panel violeta arriba y el formulario en una "hoja" blanca que se superpone.
 export default function AuthLayout({ children }) {
   return (
-    <div className="min-h-svh bg-[#3A1299] font-[Poppins] text-[#1C1633] lg:grid lg:place-items-center lg:bg-[#EFEBFB] lg:bg-[repeating-linear-gradient(135deg,transparent_0_70px,rgba(255,255,255,0.45)_70px_140px)] lg:p-4">
-      <div className="lg:grid lg:h-[min(660px,calc(100svh-2rem))] lg:w-full lg:max-w-5xl lg:grid-cols-[1fr_1.05fr] lg:overflow-hidden lg:rounded-[32px] lg:bg-white lg:shadow-[0_30px_80px_-30px_rgba(58,18,153,0.35)]">
-        {/* Panel violeta: arriba en celular, a la derecha en compu */}
+    <div className="min-h-svh bg-[#3A1299] font-[Poppins] text-[#1C1633] lg:grid lg:place-items-center lg:bg-[#EFEBFB] lg:bg-[repeating-linear-gradient(135deg,transparent_0_70px,rgba(255,255,255,0.45)_70px_140px)] lg:p-4 dark:bg-[#090613] lg:dark:bg-[#090613] lg:dark:bg-[repeating-linear-gradient(135deg,transparent_0_70px,rgba(255,255,255,0.025)_70px_140px)] dark:text-[#F4F2FA]">
+      <div className="lg:grid lg:h-[min(660px,calc(100svh-2rem))] lg:w-full lg:max-w-5xl lg:grid-cols-[1fr_1.05fr] lg:overflow-hidden lg:rounded-[32px] lg:bg-white lg:shadow-[0_30px_80px_-30px_rgba(58,18,153,0.35)] lg:dark:border lg:dark:border-[#261E3D] lg:dark:bg-[#140F24] lg:dark:shadow-[0_0_60px_-20px_rgba(91,46,224,0.35)]">
         <StripedPanel className="lg:order-2" />
 
-        <div className="relative -mt-8 rounded-t-[32px] bg-white px-7 pt-9 pb-10 lg:order-1 lg:mt-0 lg:flex lg:flex-col lg:overflow-y-auto lg:rounded-none lg:px-12 lg:pt-7 lg:pb-6">
-          <div className="hidden lg:block">
-            <Wordmark />
+        <div className="relative -mt-8 rounded-t-[32px] bg-white dark:bg-[#140F24] px-7 pt-9 pb-10 lg:order-1 lg:mt-0 lg:flex lg:flex-col lg:overflow-y-auto lg:rounded-none lg:px-12 lg:pt-7 lg:pb-6">
+          <div className="hidden items-center justify-between lg:flex">
+            <Wordmark className="dark:text-white" />
+            <ThemeToggle />
           </div>
           <div className="mx-auto w-full max-w-sm lg:my-auto lg:py-4">
             {children}
           </div>
-          <p className="mt-10 mb-0 text-center text-[11px] text-[#ABA6C2] lg:hidden">Entorno de pruebas · sin dinero real</p>
+          <p className="mt-10 mb-0 text-center text-[11px] text-[#ABA6C2] lg:hidden dark:text-[#6B6485]">Entorno de pruebas · sin dinero real</p>
         </div>
       </div>
     </div>
   );
 }
 
-// El logo: "padi." con el punto final como una monedita amarilla.
-// padi = Pagos Al Día, y viene de PAD, la materia.
 export function Wordmark({ light = false, className = '' }) {
   return (
     <span
@@ -41,7 +37,6 @@ export function Wordmark({ light = false, className = '' }) {
   );
 }
 
-// Franjas diagonales redondeadas, como en la plantilla violeta.
 function StripedPanel({ className = '' }) {
   const stripes = [
     { left: '-20%', top: '-30%', width: '55%', color: '#4C1DB8' },
@@ -61,8 +56,9 @@ function StripedPanel({ className = '' }) {
       ))}
 
       <div className="relative">
-        <div className="mb-10 lg:hidden">
+        <div className="mb-10 flex items-center justify-between lg:hidden">
           <Wordmark light />
+          <ThemeToggle variant="overlay" />
         </div>
         <p className="m-0 text-[34px] leading-[1.1] font-bold tracking-tight lg:text-[52px]">
           Tu plata,<br />al día.

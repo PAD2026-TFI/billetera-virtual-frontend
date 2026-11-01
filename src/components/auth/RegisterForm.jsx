@@ -10,7 +10,6 @@ import { IconInput, PasswordInput } from './IconInput.jsx';
 import { Divider } from './LoginForm.jsx';
 import { alertClass, inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from './styles.js';
 
-// Reglas del formulario. Copian los límites del backend (RegisterUserRequest).
 const registerSchema = z
   .object({
     firstName: z.string().trim().min(1, 'Ingresá tu nombre.').max(100, 'Máximo 100 caracteres.'),
@@ -33,13 +32,13 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(registerSchema),
-    mode: 'onTouched', // valida al salir de cada campo y después mientras escribís
+    mode: 'onTouched',
   });
   const passwordLongEnough = (watch('password') || '').length >= 12;
 
   async function onSubmit(values) {
     setServerError('');
-    const { confirmPassword, ...body } = values; // la confirmación no viaja al backend
+    const { confirmPassword, ...body } = values;
     try {
       const user = await api('/api/users', { method: 'POST', body });
       onRegistered?.(user, { email: values.email, password: values.password });
@@ -53,8 +52,8 @@ export default function RegisterForm({ onRegistered, onCancel }) {
 
   return (
     <div>
-      <h1 className="m-0 text-[28px] font-bold tracking-tight text-[#2A0E7A]">Crear cuenta</h1>
-      <p className="mt-1 mb-5 text-sm text-[#8C87A3]">Es gratis y te lleva un minuto.</p>
+      <h1 className="m-0 text-[28px] font-bold tracking-tight text-[#2A0E7A] dark:text-[#F4F2FA]">Crear cuenta</h1>
+      <p className="mt-1 mb-5 text-sm text-[#8C87A3] dark:text-[#9D97B5]">Es gratis y te lleva un minuto.</p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="m-0 grid max-w-none gap-3.5">
         <div className="grid grid-cols-2 gap-3">
@@ -109,16 +108,15 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   );
 }
 
-// Etiqueta + campo + mensaje de error (o una ayuda si no hay error).
 function Field({ id, label, error, hint, children }) {
   return (
     <div className="grid content-start gap-1.5">
       <Label htmlFor={id} className={labelClass}>{label}</Label>
       {children}
       {error ? (
-        <p className="m-0 text-xs text-red-600">{error.message}</p>
+        <p className="m-0 text-xs text-red-600 dark:text-rose-300">{error.message}</p>
       ) : (
-        hint && <div className="text-xs text-[#ABA6C2]">{hint}</div>
+        hint && <div className="text-xs text-[#ABA6C2] dark:text-[#6B6485]">{hint}</div>
       )}
     </div>
   );
