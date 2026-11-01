@@ -1,4 +1,3 @@
-// Clases compartidas por el login y el registro, para que todo combine.
 export const labelClass = 'flex-row text-[13px] font-medium text-[#4A4560]';
 
 export const inputClass =

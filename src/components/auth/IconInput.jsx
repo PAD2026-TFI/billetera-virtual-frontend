@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-// Campo de texto con un ícono a la izquierda.
 export function IconInput({ icon: Icon, ...props }) {
   return (
     <div className="relative">
@@ -12,7 +11,6 @@ export function IconInput({ icon: Icon, ...props }) {
   );
 }
 
-// Igual que IconInput, pero con un botón para mostrar u ocultar la contraseña.
 export function PasswordInput({ icon: Icon, className = '', ...props }) {
   const [visible, setVisible] = useState(false);
   return (

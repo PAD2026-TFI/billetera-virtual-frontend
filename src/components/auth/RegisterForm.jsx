@@ -10,7 +10,6 @@ import { IconInput, PasswordInput } from './IconInput.jsx';
 import { Divider } from './LoginForm.jsx';
 import { alertClass, inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from './styles.js';
 
-// Reglas del formulario. Copian los límites del backend (RegisterUserRequest).
 const registerSchema = z
   .object({
     firstName: z.string().trim().min(1, 'Ingresá tu nombre.').max(100, 'Máximo 100 caracteres.'),
@@ -33,13 +32,13 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(registerSchema),
-    mode: 'onTouched', // valida al salir de cada campo y después mientras escribís
+    mode: 'onTouched',
   });
   const passwordLongEnough = (watch('password') || '').length >= 12;
 
   async function onSubmit(values) {
     setServerError('');
-    const { confirmPassword, ...body } = values; // la confirmación no viaja al backend
+    const { confirmPassword, ...body } = values;
     try {
       const user = await api('/api/users', { method: 'POST', body });
       onRegistered?.(user, { email: values.email, password: values.password });
@@ -71,22 +70,22 @@ export default function RegisterForm({ onRegistered, onCancel }) {
         </Field>
 
         <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-3">
-        <Field
-          id="password"
-          label="Contraseña"
-          error={errors.password}
-          hint={
-            <span className={`flex items-center gap-1.5 ${passwordLongEnough ? 'text-emerald-600' : ''}`}>
-              <Check className="size-3.5" /> Mínimo 12 caracteres
-            </span>
-          }
-        >
-          <PasswordInput icon={Lock} id="password" autoComplete="new-password" className={inputClass} aria-invalid={!!errors.password} {...register('password')} />
-        </Field>
+          <Field
+            id="password"
+            label="Contraseña"
+            error={errors.password}
+            hint={
+              <span className={`flex items-center gap-1.5 ${passwordLongEnough ? 'text-emerald-600' : ''}`}>
+                <Check className="size-3.5" /> Mínimo 12 caracteres
+              </span>
+            }
+          >
+            <PasswordInput icon={Lock} id="password" autoComplete="new-password" placeholder="Ingresá tu contraseña" className={inputClass} aria-invalid={!!errors.password} {...register('password')} />
+          </Field>
 
-        <Field id="confirmPassword" label="Repetir contraseña" error={errors.confirmPassword}>
-          <PasswordInput icon={Lock} id="confirmPassword" autoComplete="new-password" className={inputClass} aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
-        </Field>
+          <Field id="confirmPassword" label="Repetir contraseña" error={errors.confirmPassword}>
+            <PasswordInput icon={Lock} id="confirmPassword" autoComplete="new-password" placeholder="Repetí tu contraseña" className={inputClass} aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
+          </Field>
         </div>
 
         {serverError && <p role="alert" className={alertClass}>{serverError}</p>}
@@ -109,7 +108,6 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   );
 }
 
-// Etiqueta + campo + mensaje de error (o una ayuda si no hay error).
 function Field({ id, label, error, hint, children }) {
   return (
     <div className="grid content-start gap-1.5">
