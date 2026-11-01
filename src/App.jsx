@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, money, parseAmount, safeCheckout, saveIntent, readIntent } from './api.js';
-import AuthLayout from './features/auth/AuthLayout.jsx';
-import LoginForm from './features/auth/LoginForm.jsx';
-import RegisterForm from './features/auth/RegisterForm.jsx';
+import AuthLayout from './components/auth/AuthLayout.jsx';
+import LoginForm from './components/auth/LoginForm.jsx';
+import RegisterForm from './components/auth/RegisterForm.jsx';
 
 const statusText = { Created: 'Preparando carga', Unknown: 'Resultado por confirmar', Pending: 'Pago pendiente',
   Approved: 'Saldo acreditado', Rejected: 'Pago rechazado', Cancelled: 'Pago cancelado', Error: 'No se pudo iniciar el pago' };

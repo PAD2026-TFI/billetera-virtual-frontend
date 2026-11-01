@@ -10,7 +10,7 @@ The project's visual identity unites the **padi.** (*Pagos Al Día*) brand with 
 
 ### A. Wordmark & Visual Identity
 - **Logo**: Bold wordmark `padi` with a gold coin dot (`<span className="size-[0.24em] rounded-full bg-[#FFD54A]" />`).
-- Canonical component: `Wordmark` (`src/features/auth/AuthLayout.jsx`).
+- Canonical component: `Wordmark` (`src/components/auth/AuthLayout.jsx`).
 - **Aesthetic Direction**: High-end fintech dark aesthetic (deep OLED midnight-violet backgrounds, gradient hero balance cards, stacked physical/virtual cards, and glowing electric violet accents) seamlessly paired with an accessible, high-contrast light mode.
 
 ### B. Color Palette & Dark Mode Architecture
@@ -68,7 +68,7 @@ Dark mode must be built systematically following these requirements:
 
 ## 3. Absolute AI Behavioral Rules
 
-1. **Git Safety & Pre-Commit Validation**: Commits are permitted and must follow Conventional Commits in Spanish (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`). Never commit secrets, credentials, tokens (Mercado Pago, JWTs, API keys) or `.env*` files (enforced by automated pre-commit hooks).
+1. **Git Commits On Explicit Request Only**: Never execute git commits automatically. Only commit when explicitly instructed by the user. When instructed, commits must follow Conventional Commits in Spanish (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`). Never commit secrets, credentials, tokens, or `.env*` files (enforced by pre-commit hooks).
 2. **No Code Comments**: Comments in source code are strictly prohibited. Code must be clean, readable, declarative, and 100% self-documenting through clear, meaningful naming.
 3. **No Emojis**: Never use emojis under any circumstances in UI copy or code. Use icons exclusively from the **Lucide React** library (e.g., `Mail`, `Lock`, `Loader2`, `Eye`, `CheckCircle2`, `ArrowRight`, `ArrowUpRight`, `ArrowDownLeft`, `Bell`, `Settings`).
 4. **Strict Scope**: Never do more than what is explicitly requested. Do not invent unrequested screens, features, or dependencies.
@@ -104,4 +104,5 @@ Before marking any task as complete, verify:
 - [ ] All code identifiers, files, and folders are in English.
 - [ ] Numbers, currency, dates, and account codes use `font-mono`.
 - [ ] Designed mobile-first and tested for responsive scaling.
+- [ ] No automatic git commits executed (only commit when explicitly asked by user).
 - [ ] Verified clean of any credentials, API keys, or secret tokens.
