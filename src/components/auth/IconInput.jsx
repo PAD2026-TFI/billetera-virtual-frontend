@@ -1,22 +1,51 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { cn } from 'cn';
 import { Input } from '@/components/ui/input';
 
-export function IconInput({ icon: Icon, ...props }) {
+export function IconInput({ icon: Icon, valid = false, className = '', ...props }) {
   return (
     <div className="relative">
-      <Icon className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-[#9C96B5]" />
-      <Input {...props} />
+      {Icon && (
+        <Icon
+          className={cn(
+            'pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 transition-colors',
+            valid ? 'text-emerald-600' : 'text-[#9C96B5]'
+          )}
+        />
+      )}
+      <Input
+        className={cn(
+          className,
+          valid && '!border-2 !border-emerald-500 !ring-2 !ring-emerald-500/25 !bg-emerald-50/20'
+        )}
+        {...props}
+      />
     </div>
   );
 }
 
-export function PasswordInput({ icon: Icon, className = '', ...props }) {
+export function PasswordInput({ icon: Icon, valid = false, className = '', ...props }) {
   const [visible, setVisible] = useState(false);
   return (
     <div className="relative">
-      <Icon className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-[#9C96B5]" />
-      <Input type={visible ? 'text' : 'password'} className={`${className} pr-12`} {...props} />
+      {Icon && (
+        <Icon
+          className={cn(
+            'pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 transition-colors',
+            valid ? 'text-emerald-600' : 'text-[#9C96B5]'
+          )}
+        />
+      )}
+      <Input
+        type={visible ? 'text' : 'password'}
+        className={cn(
+          className,
+          'pr-12',
+          valid && '!border-2 !border-emerald-500 !ring-2 !ring-emerald-500/25 !bg-emerald-50/20'
+        )}
+        {...props}
+      />
       <button
         type="button"
         onClick={() => setVisible(v => !v)}
