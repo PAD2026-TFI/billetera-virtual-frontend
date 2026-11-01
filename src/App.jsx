@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { api, money, parseAmount, safeCheckout, saveIntent, readIntent } from './api.js';
 import AuthLayout from './components/auth/AuthLayout.jsx';
 import LoginForm from './components/auth/LoginForm.jsx';
@@ -163,33 +164,44 @@ export default function App() {
   if (!session) {
     return (
       <AuthLayout>
-        {authView === 'register' && (
-          <RegisterForm
-            onRegistered={(user, credentials) => {
-              setAuthView('login');
-              signIn(credentials);
-            }}
-            onCancel={() => setAuthView('login')}
-          />
-        )}
-        {authView === 'forgot-password' && (
-          <ForgotPasswordForm onBack={() => setAuthView('login')} />
-        )}
-        {authView === 'login' && (
-          <LoginForm
-            onSubmit={login}
-            busy={busy}
-            error={error}
-            onCreateAccount={() => {
-              setError('');
-              setAuthView('register');
-            }}
-            onForgotPassword={() => {
-              setError('');
-              setAuthView('forgot-password');
-            }}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={authView}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full"
+          >
+            {authView === 'register' && (
+              <RegisterForm
+                onRegistered={(user, credentials) => {
+                  setAuthView('login');
+                  signIn(credentials);
+                }}
+                onCancel={() => setAuthView('login')}
+              />
+            )}
+            {authView === 'forgot-password' && (
+              <ForgotPasswordForm onBack={() => setAuthView('login')} />
+            )}
+            {authView === 'login' && (
+              <LoginForm
+                onSubmit={login}
+                busy={busy}
+                error={error}
+                onCreateAccount={() => {
+                  setError('');
+                  setAuthView('register');
+                }}
+                onForgotPassword={() => {
+                  setError('');
+                  setAuthView('forgot-password');
+                }}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </AuthLayout>
     );
   }
