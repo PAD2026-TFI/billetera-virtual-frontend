@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, money, parseAmount, safeCheckout, saveIntent, readIntent } from './api.js';
+import AuthLayout from './features/auth/AuthLayout.jsx';
+import LoginForm from './features/auth/LoginForm.jsx';
+import RegisterForm from './features/auth/RegisterForm.jsx';
 
 const statusText = { Created: 'Preparando carga', Unknown: 'Resultado por confirmar', Pending: 'Pago pendiente',
   Approved: 'Saldo acreditado', Rejected: 'Pago rechazado', Cancelled: 'Pago cancelado', Error: 'No se pudo iniciar el pago' };
@@ -42,13 +45,14 @@ export default function App() {
     return () => clearInterval(timer);
   }, [session, payment?.id, payment?.status]);
 
-  async function login(event) {
-    event.preventDefault(); setBusy(true); setError('');
+    async function login(event) {
+    event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const credentials = { email: form.get('email'), password: form.get('password') };
+    await signIn({ email: form.get('email'), password: form.get('password') });
+  }
+  async function signIn(credentials) {
+    setBusy(true); setError('');
     try {
-      if (register) await api('/api/users', { method: 'POST', body: { ...credentials,
-        firstName: form.get('firstName'), lastName: form.get('lastName') } });
       const result = await api('/api/auth/login', { method: 'POST', body: credentials });
       const me = await api('/api/users/me', { token: result.accessToken });
       const s = { token: result.accessToken, user: me, generation: ++generation.current };
@@ -83,21 +87,19 @@ export default function App() {
     generation.current++; setSession(null); setWallet(null); setConfig(null); setPayment(null); setIntent(null);
     setMovements([]); setQueryId(''); setError(''); setAmount('');
   }
+    if (!session) return <AuthLayout>
+    {register
+      ? <RegisterForm onRegistered={(user, credentials) => { setRegister(false); signIn(credentials); }}
+          onCancel={() => setRegister(false)} />
+      : <LoginForm onSubmit={login} busy={busy} error={error}
+          onCreateAccount={() => { setError(''); setRegister(true); }} />}
+  </AuthLayout>;
   return <main>
     <header><div><p className="eyebrow">Billetera virtual · entorno de pruebas</p><h1>Mi billetera</h1></div>
       {session && <button className="secondary" onClick={logout} disabled={busy}>Cerrar sesión</button>}</header>
     <p className="notice">Pruebas con Mercado Pago: usá exclusivamente cuentas y medios de pago de prueba. No se habilita dinero real.</p>
     {error && <p role="alert" className="error">{error}</p>}
-    {!session ? <section><h2>{register ? 'Crear cuenta' : 'Iniciar sesión'}</h2><form onSubmit={login}>
-      {register && <><label>Nombre<input name="firstName" required maxLength={100} autoComplete="given-name"/></label>
-        <label>Apellido<input name="lastName" required maxLength={100} autoComplete="family-name"/></label></>}
-      <label>Correo electrónico<input name="email" type="email" required autoComplete="username" maxLength={254}/></label>
-      <label>Contraseña<input name="password" type="password" required minLength={12} maxLength={128}
-        autoComplete={register ? 'new-password' : 'current-password'}/></label>
-      <button disabled={busy}>{busy ? 'Procesando…' : register ? 'Registrarme e ingresar' : 'Ingresar'}</button>
-      <button className="secondary" type="button" disabled={busy} onClick={() => setRegister(!register)}>
-        {register ? 'Ya tengo cuenta' : 'Crear una cuenta'}</button>
-    </form></section> : <>
+        {session && <>
       <section><h2>Hola, {session.user.firstName}</h2>
         {wallet ? <><p className="balance">{money(wallet.balance)}</p><p>Saldo disponible en ARS</p>
           <button className="secondary" disabled={busy} onClick={() => run(() => loadWallet(session))}>Actualizar saldo</button></>
