@@ -41,10 +41,10 @@ export default function AuthLayout({ children }) {
           }
           className="relative z-20 mt-auto flex h-[calc(100svh-116px)] flex-col justify-between overflow-y-auto rounded-t-[32px] bg-white px-6 pt-7 pb-6 shadow-[0_-15px_40px_rgba(0,0,0,0.25)] lg:order-1 lg:mt-0 lg:h-full lg:overflow-y-auto lg:rounded-none lg:px-12 lg:pt-8 lg:pb-6 lg:shadow-none"
         >
-          <div className="hidden lg:block lg:mb-4">
-            <Wordmark />
-          </div>
           <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-2 lg:my-auto lg:py-2">
+            <div className="hidden lg:mb-6 lg:block">
+              <Wordmark />
+            </div>
             {children}
           </div>
           <p className="mt-4 mb-0 text-center text-[11px] text-[#ABA6C2]">
@@ -86,7 +86,7 @@ function StripedPanel({ isDesktop = false }) {
           ? { duration: 0.95, ease: [0.16, 1, 0.3, 1], delay: 0.2 }
           : undefined
       }
-      className="absolute inset-0 z-0 overflow-hidden bg-[#3A1299] px-6 pt-7 text-white lg:relative lg:order-2 lg:m-3 lg:flex lg:flex-col lg:justify-end lg:rounded-[24px] lg:p-12"
+      className="absolute inset-0 z-0 overflow-hidden bg-[#3A1299] px-6 pt-7 text-white lg:relative lg:order-2 lg:m-3 lg:flex lg:flex-col lg:justify-center lg:rounded-[24px] lg:p-12"
     >
       {stripes.map((s, i) => (
         <span
@@ -96,7 +96,7 @@ function StripedPanel({ isDesktop = false }) {
         />
       ))}
 
-      <div className="relative z-10">
+      <div className="relative z-10 lg:my-auto">
         <div className="mb-1 lg:hidden">
           <Wordmark light />
           <p className="mt-0.5 mb-0 text-xs font-semibold tracking-wider text-white/80 uppercase">
@@ -142,10 +142,11 @@ function StripedPanel({ isDesktop = false }) {
         <p className="mt-2 mb-0 max-w-xs text-sm text-white/75 leading-relaxed">
           Enviá, recibí y seguí cada movimiento desde un solo lugar.
         </p>
-        <p className="mt-8 mb-0 hidden text-[11px] text-white/50 lg:block">
-          Entorno de pruebas · sin dinero real
-        </p>
       </div>
+
+      <p className="relative z-10 mb-0 hidden text-[11px] text-white/50 lg:absolute lg:bottom-6 lg:left-12 lg:block">
+        Entorno de pruebas · sin dinero real
+      </p>
     </motion.div>
   );
 }
