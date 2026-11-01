@@ -32,7 +32,7 @@
 ---
 
 ## 3. Billetera y Operaciones (Incremento 2)
-- **`US-FE-03` Dashboard Principal (Inspirado en Mockups)**:
+- **`US-FE-03` Dashboard   Principal (Inspirado en Mockups)**:
   - Vista `/dashboard`:
     - **Tarjeta Hero de Saldo**: Tarjeta con gradiente irisado/mesh (de cálido dorado a lavanda suave) en modo oscuro con texto de alto contraste, o tarjeta oscura con resplandor violeta y cifra en pesos argentinos (`font-mono`).
     - **Pares de Acciones Rápidas en Píldora**: Botón de recarga/ingreso en píldora sólida y botón de transferencia/retiro en píldora contorno (`Deposit` / `Withdraw`).
