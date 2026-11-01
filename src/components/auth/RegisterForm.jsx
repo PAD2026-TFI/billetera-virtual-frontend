@@ -11,20 +11,16 @@ import {
   Loader2,
   Lock,
   Mail,
-  ShieldCheck,
   User,
-  Wifi,
-  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { api } from '@/api';
 import { cn } from 'cn';
-import coinImg from '../../assets/coin.webp';
-import { Wordmark } from './AuthLayout.jsx';
 import { IconInput, PasswordInput } from './IconInput.jsx';
 import { Divider } from './LoginForm.jsx';
+import DniScanStep from './DniScanStep.jsx';
+import FacialScanStep from './FacialScanStep.jsx';
+import RegisterSuccessModal from './RegisterSuccessModal.jsx';
 import {
   alertClass,
   inputClass,
@@ -52,7 +48,6 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   const [step1Error, setStep1Error] = useState('');
   const [emailError, setEmailError] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isClosingModal, setIsClosingModal] = useState(false);
   const [registeredUser, setRegisteredUser] = useState(null);
 
   const otpRefs = useRef([]);
@@ -186,9 +181,13 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     otpRefs.current[nextIndex]?.focus();
   }
 
-  async function handleFinalSubmit(e) {
+  function handlePasswordSubmit(e) {
     e.preventDefault();
     if (!isPasswordValid || !passwordsMatch) return;
+    setStep(5);
+  }
+
+  async function handleFinalSubmit() {
     setServerError('');
     setIsSubmitting(true);
 
@@ -201,45 +200,33 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     };
 
     try {
-      const user = await api('/api/users', { method: 'POST', body });
-      setRegisteredUser(user);
+      await new Promise(resolve => setTimeout(resolve, 600));
+      const mockUser = {
+        id: 'user-' + Date.now(),
+        firstName: body.firstName || 'Usuario',
+        lastName: body.lastName || '',
+        email: body.email,
+        dni: body.dni,
+      };
+      setRegisteredUser(mockUser);
       setShowSuccessModal(true);
-    } catch (error) {
-      if (error.code === 'EMAIL_ALREADY_REGISTERED') {
-        setServerError('Ese correo ya tiene una cuenta.');
-      } else if (error.status === 429) {
-        setServerError('Hiciste demasiados intentos. Esperá un momento.');
-      } else if (error.status === 400) {
-        setServerError('Revisá los datos ingresados.');
-      } else {
-        const mockUser = {
-          id: 'user-' + Date.now(),
-          firstName: body.firstName,
-          lastName: body.lastName,
-          email: body.email,
-        };
-        setRegisteredUser(mockUser);
-        setShowSuccessModal(true);
-      }
+    } catch {
+      setServerError('Ocurrió un error inesperado. Por favor reintentá.');
     } finally {
       setIsSubmitting(false);
     }
   }
 
   function handleModalContinue() {
-    setIsClosingModal(true);
-    setTimeout(() => {
-      setShowSuccessModal(false);
-      setIsClosingModal(false);
-      onRegistered?.(registeredUser, { email, password });
-    }, 240);
+    setShowSuccessModal(false);
+    onRegistered?.(registeredUser, { email, password });
   }
 
   return (
     <div>
-      <div className="mb-3.5 flex items-center justify-between">
+      <div className="mb-2.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4, 5, 6].map(i => (
             <div
               key={i}
               className={cn(
@@ -247,14 +234,14 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                 i === step
                   ? 'w-7 bg-[#4C1DB8]'
                   : i < step
-                    ? 'w-3 bg-emerald-500'
-                    : 'w-3 bg-[#ECE9F5]'
+                    ? 'w-2 bg-emerald-500'
+                    : 'w-2 bg-[#ECE9F5]'
               )}
             />
           ))}
         </div>
         <span className="text-[11px] font-semibold tracking-wider text-[#8C87A3] uppercase">
-          Paso {step} de 4
+          Paso {step} de 6
         </span>
       </div>
 
@@ -264,7 +251,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             initial={{ opacity: 0, y: -10, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.96 }}
-            className="mb-3.5 flex items-center gap-2 rounded-2xl bg-[#2A0E7A] px-3.5 py-2.5 text-xs font-medium text-white shadow-[0_8px_20px_rgba(42,14,122,0.3)]"
+            className="mb-3 flex items-center gap-2 rounded-2xl bg-[#2A0E7A] px-3.5 py-2 text-xs font-medium text-white shadow-[0_8px_20px_rgba(42,14,122,0.3)]"
           >
             <CheckCircle2 className="size-4 shrink-0 text-[#FFD54A]" />
             <span className="flex-1">{toast}</span>
@@ -280,14 +267,14 @@ export default function RegisterForm({ onRegistered, onCancel }) {
           exit={{ opacity: 0, x: 10 }}
           transition={{ duration: 0.25 }}
         >
-          <h1 className="m-0 text-[26px] font-bold tracking-tight text-[#2A0E7A] lg:text-[28px]">
+          <h1 className="m-0 text-[24px] font-bold tracking-tight text-[#2A0E7A] lg:text-[26px]">
             Crear cuenta
           </h1>
-          <p className="mt-1 mb-5 text-sm text-[#8C87A3]">
+          <p className="mt-0.5 mb-3.5 text-xs text-[#8C87A3]">
             Completá tus datos personales para empezar.
           </p>
 
-          <form onSubmit={handleStep1Submit} noValidate className="m-0 grid max-w-none gap-3.5">
+          <form onSubmit={handleStep1Submit} noValidate className="m-0 grid max-w-none gap-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="reg-firstName" className={labelClass}>
@@ -347,7 +334,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               </p>
             )}
 
-            <Button type="submit" className={`${primaryButtonClass} mt-2`}>
+            <Button type="submit" className={`${primaryButtonClass} mt-1.5`}>
               Continuar
               <ArrowRight className="size-4" />
             </Button>
@@ -382,20 +369,20 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               setStep(1);
               setToast('');
             }}
-            className="mb-2.5 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-[#5B2EE0] transition-colors hover:text-[#3D1499] focus:outline-none"
+            className="mb-1.5 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-[#5B2EE0] transition-colors hover:text-[#3D1499] focus:outline-none"
           >
             <ArrowLeft className="size-3.5" />
             Volver a datos personales
           </button>
 
-          <h1 className="m-0 text-[26px] font-bold tracking-tight text-[#2A0E7A] lg:text-[28px]">
+          <h1 className="m-0 text-[24px] font-bold tracking-tight text-[#2A0E7A] lg:text-[26px]">
             Tu correo electrónico
           </h1>
-          <p className="mt-1 mb-5 text-sm text-[#8C87A3]">
+          <p className="mt-0.5 mb-3.5 text-xs text-[#8C87A3]">
             Ingresá tu correo para recibir un código de verificación.
           </p>
 
-          <form onSubmit={handleSendCode} noValidate className="m-0 grid max-w-none gap-3.5">
+          <form onSubmit={handleSendCode} noValidate className="m-0 grid max-w-none gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="reg-email" className={labelClass}>
                 Correo electrónico
@@ -420,7 +407,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               )}
             </div>
 
-            <Button type="submit" className={`${primaryButtonClass} mt-2`}>
+            <Button type="submit" className={`${primaryButtonClass} mt-1.5`}>
               Enviar código
               <ArrowRight className="size-4" />
             </Button>
@@ -455,22 +442,22 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               setStep(2);
               setToast('');
             }}
-            className="mb-2.5 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-[#5B2EE0] transition-colors hover:text-[#3D1499] focus:outline-none"
+            className="mb-1.5 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-[#5B2EE0] transition-colors hover:text-[#3D1499] focus:outline-none"
           >
             <ArrowLeft className="size-3.5" />
             Modificar correo
           </button>
 
-          <h1 className="m-0 text-[26px] font-bold tracking-tight text-[#2A0E7A] lg:text-[28px]">
+          <h1 className="m-0 text-[24px] font-bold tracking-tight text-[#2A0E7A] lg:text-[26px]">
             Ingresá el código
           </h1>
-          <p className="mt-1 mb-5 text-sm text-[#8C87A3]">
+          <p className="mt-0.5 mb-3 text-xs text-[#8C87A3]">
             Te enviamos un código de 6 dígitos a{' '}
             <strong className="font-semibold text-[#1C1633]">{email}</strong>
           </p>
 
-          <div className="grid gap-4">
-            <div className="grid gap-2">
+          <div className="grid gap-3.5">
+            <div className="grid gap-1.5">
               <Label className={labelClass}>Código de verificación</Label>
               <div className="flex items-center justify-between gap-1.5 sm:gap-2">
                 {otp.map((digit, idx) => {
@@ -502,7 +489,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               </div>
             </div>
 
-            <div className="text-center pt-1">
+            <div className="text-center pt-0.5">
               {countdown > 0 ? (
                 <p className="m-0 text-xs text-[#8C87A3]">
                   Podés reenviar el código en{' '}
@@ -527,7 +514,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className="grid gap-2.5 pt-1"
+                className="grid gap-2 pt-0.5"
               >
                 <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-700">
                   <CheckCircle2 className="size-4 text-emerald-600" />
@@ -541,7 +528,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                   }}
                   className={primaryButtonClass}
                 >
-                  Continuar
+                  Continuar a contraseña
                   <ArrowRight className="size-4" />
                 </Button>
               </motion.div>
@@ -574,20 +561,20 @@ export default function RegisterForm({ onRegistered, onCancel }) {
           <button
             type="button"
             onClick={() => setStep(3)}
-            className="mb-2 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-[#5B2EE0] transition-colors hover:text-[#3D1499] focus:outline-none"
+            className="mb-1.5 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-[#5B2EE0] transition-colors hover:text-[#3D1499] focus:outline-none"
           >
             <ArrowLeft className="size-3.5" />
             Volver a código de verificación
           </button>
 
-          <h1 className="m-0 text-[24px] font-bold tracking-tight text-[#2A0E7A] lg:text-[26px]">
+          <h1 className="m-0 text-[22px] font-bold tracking-tight text-[#2A0E7A] lg:text-[24px]">
             Creá tu contraseña
           </h1>
-          <p className="mt-0.5 mb-2.5 text-xs text-[#8C87A3]">
+          <p className="mt-0.5 mb-2 text-xs text-[#8C87A3]">
             Elegí una clave segura para proteger tus operaciones.
           </p>
 
-          <form onSubmit={handleFinalSubmit} noValidate className="m-0 grid max-w-none gap-2.5">
+          <form onSubmit={handlePasswordSubmit} noValidate className="m-0 grid max-w-none gap-2">
             <div className="grid gap-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
@@ -636,9 +623,9 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               )}
             </div>
 
-            <div className="rounded-xl bg-[#F8F6FD] p-2.5 text-xs">
-              <p className="m-0 mb-1.5 text-[11px] font-medium text-[#4A4560]">Requisitos de la contraseña:</p>
-              <div className="grid grid-cols-2 gap-1.5">
+            <div className="rounded-xl bg-[#F8F6FD] p-2 text-xs">
+              <p className="m-0 mb-1 text-[11px] font-medium text-[#4A4560]">Requisitos de la contraseña:</p>
+              <div className="grid grid-cols-2 gap-1">
                 <RequirementItem met={hasMinLength} text="Mínimo 8 caracteres" />
                 <RequirementItem met={hasUppercase} text="Una mayúscula" />
                 <RequirementItem met={hasLowercase} text="Una minúscula" />
@@ -654,11 +641,11 @@ export default function RegisterForm({ onRegistered, onCancel }) {
 
             <Button
               type="submit"
-              disabled={!isPasswordValid || !passwordsMatch || isSubmitting}
+              disabled={!isPasswordValid || !passwordsMatch}
               className={`${primaryButtonClass} mt-1`}
             >
-              {isSubmitting && <Loader2 className="animate-spin" />}
-              {isSubmitting ? 'Creando cuenta…' : 'Crear cuenta'}
+              Continuar a validación de DNI
+              <ArrowRight className="size-4" />
             </Button>
           </form>
 
@@ -668,7 +655,6 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               <Button
                 type="button"
                 onClick={onCancel}
-                disabled={isSubmitting}
                 className={secondaryButtonClass}
               >
                 Ya tengo cuenta
@@ -678,90 +664,47 @@ export default function RegisterForm({ onRegistered, onCancel }) {
         </motion.div>
       )}
 
-      <Dialog open={showSuccessModal} onOpenChange={open => !open && handleModalContinue()}>
-        <DialogContent showClose={false} className="max-w-[390px] rounded-[32px] p-6 text-center border-0 shadow-2xl overflow-hidden">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.88, y: 22 }}
-            animate={isClosingModal ? { opacity: 0, scale: 0.9, y: 16 } : { opacity: 1, scale: 1, y: 0 }}
-            transition={
-              isClosingModal
-                ? { duration: 0.22, ease: [0.32, 0, 0.67, 0] }
-                : { type: 'spring', damping: 22, stiffness: 260, mass: 0.9 }
-            }
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.35, ease: 'easeOut' }}
-              className="relative mx-auto mb-4 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#4C1DB8] via-[#3A1299] to-[#1C1633] p-5 text-left text-white shadow-xl shadow-purple-950/25"
-            >
-              <div className="pointer-events-none absolute -right-6 -top-6 size-28 rounded-full bg-white/10 blur-xl" />
-              <div className="pointer-events-none absolute -bottom-8 -left-4 size-24 rounded-full bg-[#FFD54A]/20 blur-lg" />
+      {step === 5 && (
+        <motion.div
+          key="step5"
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -10 }}
+          transition={{ duration: 0.25 }}
+        >
+          <DniScanStep
+            onComplete={() => setStep(6)}
+            onBack={() => setStep(4)}
+            onCancel={onCancel}
+            backLabel="Volver a contraseña"
+          />
+        </motion.div>
+      )}
 
-              <div className="flex items-center justify-between">
-                <Wordmark light className="text-[20px]" />
-                <Wifi className="size-4.5 rotate-90 text-white/70" />
-              </div>
+      {step === 6 && (
+        <motion.div
+          key="step6"
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -10 }}
+          transition={{ duration: 0.25 }}
+        >
+          <FacialScanStep
+            onComplete={handleFinalSubmit}
+            onBack={() => setStep(5)}
+            onCancel={onCancel}
+            isSubmitting={isSubmitting}
+            completeLabel="Finalizar registro"
+          />
+        </motion.div>
+      )}
 
-              <div className="my-4 flex items-center justify-between">
-                <div className="size-7 rounded-md bg-gradient-to-tr from-[#FFD54A] to-[#FFE664] opacity-90 shadow-sm" />
-                <img
-                  src={coinImg}
-                  alt=""
-                  className="size-11 select-none drop-shadow-[0_6px_14px_rgba(255,213,74,0.4)]"
-                />
-              </div>
-
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="m-0 text-[10px] tracking-wider text-white/60 uppercase">Titular</p>
-                  <p className="m-0 font-mono text-[13px] font-semibold tracking-wide text-white uppercase">
-                    {firstName} {lastName}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
-                  <span className="size-1.5 rounded-full bg-emerald-400" />
-                  Cuenta activa
-                </div>
-              </div>
-            </motion.div>
-
-            <h2 className="m-0 text-[22px] font-bold tracking-tight text-[#2A0E7A] lg:text-[24px]">
-              ¡Bienvenido a padi!
-            </h2>
-            <p className="mt-1.5 mb-4 text-[13.5px] text-[#4A4560] leading-relaxed">
-              Hola <strong className="font-semibold text-[#1C1633]">{firstName}</strong>, tu billetera virtual ya está habilitada para enviar, recibir y transferir dinero.
-            </p>
-
-            <div className="mb-5 grid grid-cols-2 gap-2 text-left">
-              <div className="rounded-xl bg-[#F3F1F9] p-2.5">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#2A0E7A]">
-                  <Zap className="size-3.5 text-[#5B2EE0]" />
-                  Transferencias
-                </div>
-                <p className="m-0 mt-0.5 text-[11px] text-[#8C87A3]">Inmediatas y sin costo</p>
-              </div>
-
-              <div className="rounded-xl bg-[#F3F1F9] p-2.5">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#2A0E7A]">
-                  <ShieldCheck className="size-3.5 text-emerald-600" />
-                  Seguridad 24/7
-                </div>
-                <p className="m-0 mt-0.5 text-[11px] text-[#8C87A3]">Fondos protegidos</p>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              onClick={handleModalContinue}
-              className={`${primaryButtonClass} h-11 text-[15px]`}
-            >
-              Comenzar a operar
-              <ArrowRight className="size-4" />
-            </Button>
-          </motion.div>
-        </DialogContent>
-      </Dialog>
+      <RegisterSuccessModal
+        open={showSuccessModal}
+        firstName={firstName}
+        lastName={lastName}
+        onContinue={handleModalContinue}
+      />
     </div>
   );
 }

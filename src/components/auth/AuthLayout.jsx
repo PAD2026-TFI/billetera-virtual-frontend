@@ -28,7 +28,7 @@ export default function AuthLayout({ children }) {
 
   return (
     <div className="relative min-h-svh overflow-hidden bg-[#3A1299] font-[Poppins] text-[#1C1633] lg:grid lg:place-items-center lg:bg-[#EFEBFB] lg:bg-[repeating-linear-gradient(135deg,transparent_0_70px,rgba(255,255,255,0.45)_70px_140px)] lg:p-4">
-      <div className="relative flex h-svh w-full flex-col overflow-hidden lg:grid lg:h-[min(680px,calc(100svh-2rem))] lg:min-h-0 lg:max-w-5xl lg:grid-cols-[1fr_1.05fr] lg:overflow-hidden lg:rounded-[32px] lg:bg-white lg:shadow-[0_30px_80px_-30px_rgba(58,18,153,0.35)]">
+      <div className="relative flex h-svh w-full flex-col overflow-hidden lg:grid lg:h-[min(700px,calc(100svh-1.5rem))] lg:min-h-0 lg:max-w-5xl lg:grid-cols-[1fr_1.05fr] lg:overflow-hidden lg:rounded-[32px] lg:bg-white lg:shadow-[0_30px_80px_-30px_rgba(58,18,153,0.35)]">
         <StripedPanel isDesktop={isDesktop} />
 
         <motion.div
@@ -39,15 +39,15 @@ export default function AuthLayout({ children }) {
               ? { duration: 0.7, delay: 0.35 }
               : { type: 'spring', damping: 28, stiffness: 65, mass: 1.15, delay: 0.25 }
           }
-          className="custom-scrollbar relative z-20 mt-auto flex h-[calc(100svh-116px)] flex-col justify-between overflow-y-auto rounded-t-[32px] bg-white px-6 pt-7 pb-6 shadow-[0_-15px_40px_rgba(0,0,0,0.25)] lg:order-1 lg:mt-0 lg:h-full lg:overflow-y-auto lg:rounded-none lg:px-12 lg:pt-7 lg:pb-5 lg:shadow-none"
+          className="custom-scrollbar relative z-20 mt-auto flex h-[calc(100svh-116px)] flex-col justify-between overflow-y-auto rounded-t-[32px] bg-white px-6 pt-6 pb-5 shadow-[0_-15px_40px_rgba(0,0,0,0.25)] lg:order-1 lg:mt-0 lg:h-full lg:overflow-y-auto lg:rounded-none lg:px-10 lg:pt-5 lg:pb-4 lg:shadow-none"
         >
-          <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-1.5 lg:my-auto lg:py-1">
-            <div className="hidden lg:mb-4 lg:block">
+          <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-1 lg:my-auto">
+            <div className="hidden lg:mb-3 lg:block">
               <Wordmark />
             </div>
             {children}
           </div>
-          <p className="mt-4 mb-0 text-center text-[11px] text-[#ABA6C2]">
+          <p className="mt-2 mb-0 text-center text-[11px] text-[#ABA6C2]">
             Entorno de pruebas · sin dinero real
           </p>
         </motion.div>
