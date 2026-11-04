@@ -20,9 +20,24 @@ const mockWalletSummary = {
     { id: 'm7', kind: 'payment', title: 'Farmacity', detail: 'Pago con QR', amount: -6720, status: 'completed', createdAt: '2026-10-25T17:34:00-03:00' },
     { id: 'm8', kind: 'transferOut', title: 'Transferencia a Sofía Herrera', detail: 'Transferencia enviada', amount: -15000, status: 'completed', createdAt: '2026-10-24T10:12:00-03:00' },
     { id: 'm9', kind: 'topUp', title: 'Carga de saldo', detail: 'Mercado Pago', amount: 30000, status: 'completed', createdAt: '2026-10-22T21:45:00-03:00' },
+    { id: 'm10', kind: 'payment', title: 'Librería Rayuela', detail: 'Pago con QR', amount: -2400, status: 'completed', createdAt: '2026-10-20T16:20:00-03:00' },
+    { id: 'm11', kind: 'transferIn', title: 'Transferencia de Lucía Gómez', detail: 'Transferencia recibida', amount: 12500, status: 'completed', createdAt: '2026-10-17T12:05:00-03:00' },
+    { id: 'm12', kind: 'payment', title: 'Kiosco El Paso', detail: 'Recarga SUBE', amount: -5000, status: 'completed', createdAt: '2026-10-15T08:40:00-03:00' },
+    { id: 'm13', kind: 'transferOut', title: 'Transferencia a Martín Ruiz', detail: 'Alquiler compartido', amount: -45000, status: 'completed', createdAt: '2026-10-10T19:12:00-03:00' },
+    { id: 'm14', kind: 'topUp', title: 'Carga de saldo', detail: 'Mercado Pago', amount: 100000, status: 'completed', createdAt: '2026-10-05T10:30:00-03:00' },
   ],
   cardRequest: null,
 };
+
+// Saldo posterior de cada movimiento acreditado, como lo registra el libro mayor del backend.
+(function assignBalanceAfter(summary) {
+  let balance = summary.balance;
+  for (const movement of summary.recentMovements) {
+    if (movement.status !== 'completed') continue;
+    movement.balanceAfter = Math.round(balance * 100) / 100;
+    balance -= movement.amount;
+  }
+})(mockWalletSummary);
 
 export const mockContacts = {
   'lucia.gomez.padi': 'Lucía Gómez',
