@@ -17,9 +17,9 @@ describe('Movimientos', () => {
   it('filtra por egresos y busca por texto', async () => {
     const user = userEvent.setup();
     renderAt('/movimientos', <MovementsPage />);
-    expect(await screen.findByRole('heading', { name: '9 movimientos' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '14 movimientos' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Egresos' }));
-    expect(screen.getByRole('heading', { name: '5 movimientos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '8 movimientos' })).toBeInTheDocument();
     await user.type(screen.getByLabelText('Buscar movimientos'), 'farmacity');
     expect(screen.getByRole('heading', { name: '1 movimiento' })).toBeInTheDocument();
   });

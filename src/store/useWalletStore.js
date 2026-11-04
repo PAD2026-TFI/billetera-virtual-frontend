@@ -31,13 +31,17 @@ export const useWalletStore = create((set, get) => ({
   dismissSpending: () => set({ spendingDismissed: true }),
 
   addMovement: movement =>
-    set(state => ({
-      summary: {
-        ...state.summary,
-        balance: movement.status === 'completed' ? roundMoney(state.summary.balance + movement.amount) : state.summary.balance,
-        recentMovements: [movement, ...state.summary.recentMovements],
-      },
-    })),
+    set(state => {
+      const completed = movement.status === 'completed';
+      const balance = completed ? roundMoney(state.summary.balance + movement.amount) : state.summary.balance;
+      return {
+        summary: {
+          ...state.summary,
+          balance,
+          recentMovements: [completed ? { ...movement, balanceAfter: balance } : movement, ...state.summary.recentMovements],
+        },
+      };
+    }),
 
   transfer: async ({ destination, amount, note }) => {
     await wait(mockTiming.network);
@@ -78,12 +82,13 @@ export const useWalletStore = create((set, get) => ({
     set(state => {
       const target = state.summary.recentMovements.find(movement => movement.id === id);
       if (!target || target.status !== 'pending') return state;
+      const balance = roundMoney(state.summary.balance + target.amount);
       return {
         summary: {
           ...state.summary,
-          balance: roundMoney(state.summary.balance + target.amount),
+          balance,
           recentMovements: state.summary.recentMovements.map(movement =>
-            movement.id === id ? { ...movement, status: 'completed' } : movement,
+            movement.id === id ? { ...movement, status: 'completed', balanceAfter: balance } : movement,
           ),
         },
       };
