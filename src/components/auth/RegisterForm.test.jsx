@@ -1,67 +1,105 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import RegisterForm from './RegisterForm.jsx';
 
-async function fill(user, overrides = {}) {
-  const v = { firstName: 'Ana', lastName: 'Pérez', email: 'ana@test.com', password: 'claveSegura123', confirm: 'claveSegura123', ...overrides };
-  await user.type(screen.getByLabelText('Nombre'), v.firstName);
-  await user.type(screen.getByLabelText('Apellido'), v.lastName);
-  await user.type(screen.getByLabelText('Correo electrónico'), v.email);
-  await user.type(screen.getByLabelText('Contraseña'), v.password);
-  await user.type(screen.getByLabelText('Repetir contraseña'), v.confirm);
+const slow = { timeout: 4000 };
+
+async function completePersonalData(user, { firstName = 'Ana', lastName = 'Pérez', dni = '40123456' } = {}) {
+  await user.type(screen.getByLabelText('Nombre'), firstName);
+  await user.type(screen.getByLabelText('Apellido'), lastName);
+  await user.type(screen.getByLabelText('DNI'), dni);
+  await user.click(screen.getByRole('button', { name: 'Continuar' }));
 }
 
-const submit = user => user.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+async function verifyEmail(user, email = 'ana@test.com') {
+  await user.type(await screen.findByLabelText('Correo electrónico'), email);
+  await user.click(screen.getByRole('button', { name: 'Enviar código' }));
+  await screen.findByRole('heading', { name: 'Ingresá el código' });
+  await vi.waitFor(() => expect(screen.getAllByRole('textbox')[0]).toHaveFocus());
+  await user.keyboard('123456');
+  expect(await screen.findByText('Código verificado correctamente', {}, slow)).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Continuar a contraseña' }));
+}
 
-afterEach(() => vi.restoreAllMocks());
+async function createPassword(user, password = 'ClaveSegura1') {
+  await user.type(await screen.findByLabelText('Contraseña'), password);
+  await user.type(screen.getByLabelText('Repetir contraseña'), password);
+  await user.click(screen.getByRole('button', { name: 'Continuar a validación de DNI' }));
+}
 
 describe('RegisterForm', () => {
-  it('muestra los errores si se envía vacío', async () => {
+  it('pide nombre, apellido y un DNI de 7 u 8 números', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
-    await submit(user);
-    expect(await screen.findByText('Ingresá tu nombre.')).toBeInTheDocument();
-    expect(screen.getByText('Mínimo 12 caracteres.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Ingresá tu nombre.');
+
+    await completePersonalData(user, { dni: '12ab3' });
+    expect(screen.getByLabelText('DNI')).toHaveValue('123');
+    expect(screen.getByRole('alert')).toHaveTextContent('Ingresá un DNI válido (7 u 8 números).');
   });
 
-  it('avisa si las contraseñas no coinciden', async () => {
+  it('valida el correo y verifica el código de 6 dígitos', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
-    await fill(user, { confirm: 'otraClave12345' });
-    await submit(user);
-    expect(await screen.findByText('Las contraseñas no coinciden.')).toBeInTheDocument();
+    await completePersonalData(user);
+    await user.type(await screen.findByLabelText('Correo electrónico'), 'correo-sin-arroba');
+    await user.click(screen.getByRole('button', { name: 'Enviar código' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Ingresá un correo electrónico válido.');
+
+    await user.clear(screen.getByLabelText('Correo electrónico'));
+    await verifyEmail(user);
+    expect(await screen.findByRole('heading', { name: 'Creá tu contraseña' })).toBeInTheDocument();
   });
 
-  it('envía los datos sin la confirmación y avisa al terminar', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ id: '1', firstName: 'Ana', lastName: 'Pérez', email: 'ana@test.com' }), { status: 201 }));
+  it('exige una contraseña segura que coincida y permite mostrarla', async () => {
+    const user = userEvent.setup();
+    render(<RegisterForm />);
+    await completePersonalData(user);
+    await verifyEmail(user);
+
+    const password = await screen.findByLabelText('Contraseña');
+    const submit = screen.getByRole('button', { name: 'Continuar a validación de DNI' });
+    await user.type(password, 'debil');
+    expect(submit).toBeDisabled();
+
+    await user.clear(password);
+    await user.type(password, 'ClaveSegura1');
+    await user.type(screen.getByLabelText('Repetir contraseña'), 'OtraClave1');
+    expect(screen.getByRole('alert')).toHaveTextContent('Las contraseñas no coinciden.');
+    expect(submit).toBeDisabled();
+
+    await user.clear(screen.getByLabelText('Repetir contraseña'));
+    await user.type(screen.getByLabelText('Repetir contraseña'), 'ClaveSegura1');
+    expect(submit).toBeEnabled();
+
+    expect(password).toHaveAttribute('type', 'password');
+    await user.click(screen.getAllByRole('button', { name: 'Mostrar contraseña' })[0]);
+    expect(password).toHaveAttribute('type', 'text');
+  });
+
+  it('completa la validación de DNI y facial y entrega las credenciales al terminar', async () => {
     const onRegistered = vi.fn();
     const user = userEvent.setup();
     render(<RegisterForm onRegistered={onRegistered} />);
-    await fill(user);
-    await submit(user);
-    await vi.waitFor(() => expect(onRegistered).toHaveBeenCalled());
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body))
-      .toEqual({ firstName: 'Ana', lastName: 'Pérez', email: 'ana@test.com', password: 'claveSegura123' });
-  });
+    await completePersonalData(user);
+    await verifyEmail(user);
+    await createPassword(user);
 
-  it('muestra el error del backend si el correo ya existe', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ code: 'EMAIL_ALREADY_REGISTERED' }), { status: 409 }));
-    const user = userEvent.setup();
-    render(<RegisterForm />);
-    await fill(user);
-    await submit(user);
-    expect(await screen.findByText('Ese correo ya tiene una cuenta.')).toBeInTheDocument();
-  });
+    await user.click(await screen.findByRole('button', { name: 'Capturar frente del DNI' }));
+    await user.click(await screen.findByRole('button', { name: 'Capturar dorso del DNI' }, slow));
+    await user.click(await screen.findByRole('button', { name: 'Continuar a validación facial' }, slow));
 
-  it('permite mostrar la contraseña', async () => {
-    const user = userEvent.setup();
-    render(<RegisterForm />);
-    const input = screen.getByLabelText('Contraseña');
-    expect(input).toHaveAttribute('type', 'password');
-    await user.click(screen.getAllByRole('button', { name: 'Mostrar contraseña' })[0]);
-    expect(input).toHaveAttribute('type', 'text');
+    await user.click(await screen.findByRole('button', { name: 'Iniciar escaneo facial' }));
+    await user.click(await screen.findByRole('button', { name: 'Finalizar registro' }, slow));
+
+    const welcome = await screen.findByRole('dialog', {}, slow);
+    expect(within(welcome).getByRole('heading', { name: '¡Bienvenido a padi!' })).toBeInTheDocument();
+    await user.click(within(welcome).getByRole('button', { name: 'Comenzar a operar' }));
+    await vi.waitFor(() => expect(onRegistered).toHaveBeenCalledWith(
+      expect.objectContaining({ firstName: 'Ana', lastName: 'Pérez', email: 'ana@test.com', dni: '40123456' }),
+      { email: 'ana@test.com', password: 'ClaveSegura1' },
+    ));
   });
 });
