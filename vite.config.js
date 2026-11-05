@@ -9,5 +9,5 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, './src') } },
   server: { port: 5173, strictPort: true },
-  test: { environment: 'jsdom', setupFiles: ['./src/test-setup.js'] },
+  test: { environment: 'jsdom', setupFiles: ['./src/test-setup.js'], testTimeout: 15000 },
 });

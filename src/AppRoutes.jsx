@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import AuthRoutesLayout from '@/components/auth/AuthRoutesLayout';
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/routing/RouteGuards';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import DashboardPage from '@/pages/DashboardPage';
 import MovementsPage from '@/pages/MovementsPage';
 import TransferPage from '@/pages/TransferPage';
@@ -15,8 +17,11 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<PublicOnlyRoute />}>
-        <Route path={routes.login} element={<LoginPage />} />
-        <Route path={routes.register} element={<RegisterPage />} />
+        <Route element={<AuthRoutesLayout />}>
+          <Route path={routes.login} element={<LoginPage />} />
+          <Route path={routes.register} element={<RegisterPage />} />
+          <Route path={routes.forgotPassword} element={<ForgotPasswordPage />} />
+        </Route>
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route path={routes.home} element={<DashboardPage />} />

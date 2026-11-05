@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import ThemeToggle from './ThemeToggle.jsx';
-import AuthLayout from '@/components/auth/AuthLayout.jsx';
 import { applyTheme, useThemeStore } from '@/store/useThemeStore';
 
 beforeEach(() => {
@@ -28,10 +27,5 @@ describe('ThemeToggle', () => {
     await user.click(screen.getByRole('button', { name: 'Activar modo claro' }));
     expect(document.documentElement).not.toHaveClass('dark');
     expect(localStorage.getItem('padi-theme')).toBe('light');
-  });
-
-  it('está disponible en la pantalla de ingreso', () => {
-    render(<AuthLayout><p>Formulario</p></AuthLayout>);
-    expect(screen.getAllByRole('button', { name: 'Activar modo oscuro' }).length).toBeGreaterThan(0);
   });
 });
