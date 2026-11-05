@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { api, money, parseAmount, safeCheckout, saveIntent, readIntent } from '@/api';
+import { api, money, parseAmount, safeCheckout, saveIntent, readIntent } from '@/services/api';
 import { useAuthStore, useSignOut } from '@/store/useAuthStore';
 
 const statusText = { Created: 'Preparando carga', Unknown: 'Resultado por confirmar', Pending: 'Pago pendiente',
   Approved: 'Saldo acreditado', Rejected: 'Pago rechazado', Cancelled: 'Pago cancelado', Error: 'No se pudo iniciar el pago' };
 export default function SandboxPage() {
   const session = useAuthStore(state => state.session);
-  const expireSession = useAuthStore(state => state.signOut);
   const signOut = useSignOut();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -20,25 +19,24 @@ export default function SandboxPage() {
 
   function report(e) {
     setError(e.message || 'No pudimos comunicarnos con la API. Conservá la carga para reintentar.');
-    if (e.status === 401) expireSession();
   }
   async function loadWallet() {
     try {
-      const w = await api('/api/wallets/me', { token: session.token });
-      const history = await api('/api/wallets/me/movements?limit=20', { token: session.token });
+      const w = await api('/api/wallets/me');
+      const history = await api('/api/wallets/me/movements?limit=20');
       setWallet(w); setMovements(history.items);
     } catch (e) { if (e.code === 'WALLET_NOT_FOUND') setWallet(null); else throw e; }
   }
   async function showPayment(id, refresh = false) {
     if (!id) return;
     const p = await api(`/api/payments/${encodeURIComponent(id)}${refresh ? '/refresh' : ''}`,
-      { token: session.token, method: refresh ? 'POST' : 'GET' });
+      { method: refresh ? 'POST' : 'GET' });
     setPayment(p); setQueryId(p.id);
     if (p.status === 'Approved') await loadWallet();
   }
   useEffect(() => {
     run(async () => {
-      setConfig(await api('/api/payments/config', { token: session.token }));
+      setConfig(await api('/api/payments/config'));
       await loadWallet();
       const saved = readIntent(session.user.id); setIntent(saved); setAmount(saved ? String(saved.amount) : '');
       if (saved?.paymentId) await showPayment(saved.paymentId);
@@ -59,7 +57,7 @@ export default function SandboxPage() {
       if (intent && intent.amount !== parsed) throw new Error('Para cambiar el importe iniciá una nueva carga.');
       const current = intent || { key: crypto.randomUUID(), amount: parsed };
       saveIntent(session.user.id, current); setIntent(current);
-      const p = await api('/api/payments', { token: session.token, key: current.key, method: 'POST', body: { amount: current.amount } });
+      const p = await api('/api/payments', { key: current.key, method: 'POST', body: { amount: current.amount } });
       saveIntent(session.user.id, { ...current, paymentId: p.id });
       setIntent({ ...current, paymentId: p.id }); setPayment(p); setQueryId(p.id);
       if (p.status === 'Approved') await loadWallet();
@@ -74,7 +72,7 @@ export default function SandboxPage() {
         {wallet ? <><p className="balance">{money(wallet.balance)}</p><p>Saldo disponible en ARS</p>
           <button className="secondary" disabled={busy} onClick={() => run(() => loadWallet())}>Actualizar saldo</button></>
           : <><p>Todavía no tenés una billetera.</p><button disabled={busy} onClick={() => run(async () => {
-            await api('/api/wallets', { token: session.token, method: 'POST' }); await loadWallet();
+            await api('/api/wallets', { method: 'POST' }); await loadWallet();
           })}>Crear mi billetera</button></>}
       </section>
       <section><h2>Cargar saldo</h2>

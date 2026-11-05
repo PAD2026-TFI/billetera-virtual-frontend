@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/api';
+import { api } from '@/services/api';
 import { routes } from '@/lib/routes';
 
 export const useAuthStore = create(set => ({

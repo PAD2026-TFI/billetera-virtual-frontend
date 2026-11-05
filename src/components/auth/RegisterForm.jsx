@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Check, Loader2, Lock, Mail, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { api } from '@/api';
+import { api } from '@/services/api';
 import { IconInput, PasswordInput } from './IconInput.jsx';
 import { Divider } from './LoginForm.jsx';
 import { alertClass, inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from './styles.js';
@@ -28,6 +28,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   const {
     register,
     handleSubmit,
+    setError,
     watch,
     formState: { errors, isSubmitting },
   } = useForm({
@@ -35,6 +36,12 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     mode: 'onTouched',
   });
   const passwordLongEnough = (watch('password') || '').length >= 12;
+
+  function showFieldErrors(fieldErrors) {
+    const formErrors = Object.entries(fieldErrors).filter(([name]) => name in registerSchema.shape);
+    formErrors.forEach(([name, message]) => setError(name, { message }));
+    if (formErrors.length === 0) setServerError('Revisá los datos ingresados.');
+  }
 
   async function onSubmit(values) {
     setServerError('');
@@ -45,7 +52,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     } catch (error) {
       if (error.code === 'EMAIL_ALREADY_REGISTERED') setServerError('Ese correo ya tiene una cuenta.');
       else if (error.status === 429) setServerError('Hiciste demasiados intentos. Esperá un momento.');
-      else if (error.status === 400) setServerError('Revisá los datos ingresados.');
+      else if (error.status === 400 || error.status === 422) showFieldErrors(error.fieldErrors);
       else setServerError('No pudimos crear la cuenta. Intentá de nuevo más tarde.');
     }
   }
