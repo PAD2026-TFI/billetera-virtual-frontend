@@ -56,6 +56,17 @@ describe('RegisterForm', () => {
     expect(await screen.findByText('Ese correo ya tiene una cuenta.')).toBeInTheDocument();
   });
 
+  it('muestra los errores de validación del backend en cada campo', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ code: 'INVALID_INPUT', errors: { Email: ['Campo ausente, inválido o no permitido.'] } }), { status: 400 }));
+    const user = userEvent.setup();
+    render(<RegisterForm />);
+    await fill(user);
+    await submit(user);
+    expect(await screen.findByText('Campo ausente, inválido o no permitido.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Correo electrónico')).toHaveAttribute('aria-invalid', 'true');
+  });
+
   it('permite mostrar la contraseña', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
