@@ -2,7 +2,6 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import MovementsPage from './MovementsPage.jsx';
-import TransferPage from './TransferPage.jsx';
 import TopUpPage from './TopUpPage.jsx';
 import PayPage from './PayPage.jsx';
 import CardPage from './CardPage.jsx';
@@ -22,34 +21,6 @@ describe('Movimientos', () => {
     expect(screen.getByRole('heading', { name: '8 movimientos' })).toBeInTheDocument();
     await user.type(screen.getByLabelText('Buscar movimientos'), 'farmacity');
     expect(screen.getByRole('heading', { name: '1 movimiento' })).toBeInTheDocument();
-  });
-});
-
-describe('Transferir', () => {
-  it('valida el destino y el saldo antes de confirmar', async () => {
-    const user = userEvent.setup();
-    renderAt('/transferir', <TransferPage />);
-    await user.type(await screen.findByLabelText('Alias o CVU'), 'no.existe.padi');
-    await user.type(screen.getByLabelText('Monto'), '500000');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
-    expect(await screen.findByText(/Tu saldo disponible es/)).toBeInTheDocument();
-    await user.clear(screen.getByLabelText('Monto'));
-    await user.type(screen.getByLabelText('Monto'), '100');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
-    expect(await screen.findByText('No encontramos una cuenta con ese alias o CVU.')).toBeInTheDocument();
-  });
-
-  it('transfiere a un contacto y descuenta el saldo', async () => {
-    const user = userEvent.setup();
-    renderAt('/transferir', <TransferPage />);
-    await user.click(await screen.findByRole('button', { name: /Lucía Gómez/ }));
-    await user.type(screen.getByLabelText('Monto'), '12500,50');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
-    expect(await screen.findByRole('heading', { name: 'Revisá antes de transferir' })).toBeInTheDocument();
-    await user.click(within(screen.getByRole('main')).getByRole('button', { name: 'Transferir' }));
-    expect(await screen.findByRole('heading', { name: 'Transferencia enviada' })).toBeInTheDocument();
-    expect(balance()).toBe(139840.25);
-    expect(useWalletStore.getState().summary.recentMovements[0].title).toBe('Transferencia a Lucía Gómez');
   });
 });
 

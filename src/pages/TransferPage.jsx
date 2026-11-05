@@ -1,111 +1,45 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { AtSign, Loader2, MessageSquareText, UserRound } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import AppLayout, { PageHeader, panelClass } from '@/components/layout/AppLayout';
-import { IconInput } from '@/components/auth/IconInput';
-import Field from '@/components/forms/Field';
-import MoneyInput from '@/components/forms/MoneyInput';
 import ResultCard from '@/components/common/ResultCard';
-import { alertClass, fieldInputClass, primaryActionClass, secondaryActionClass, sectionTitleClass } from '@/components/forms/formStyles';
-import { formatCurrency, formatDateTime } from '@/lib/formatters';
-import { parseMoney } from '@/lib/money';
+import { primaryActionClass, secondaryActionClass, sectionTitleClass } from '@/components/forms/formStyles';
+import TransferStepper from '@/components/transfer/TransferStepper';
+import RecipientStep from '@/components/transfer/RecipientStep';
+import AmountStep from '@/components/transfer/AmountStep';
+import ReviewStep from '@/components/transfer/ReviewStep';
+import { formatCuit, formatCurrency, formatDateTime } from '@/lib/formatters';
 import { routes } from '@/lib/routes';
-import { mockContacts, resolveRecipient, TRANSFER_LIMIT } from '@/services/mocks/walletService';
+import { TRANSFER_LIMIT } from '@/services/mocks/walletService';
 import { useWalletStore } from '@/store/useWalletStore';
 
-const transferSchema = z.object({
-  destination: z
-    .string()
-    .trim()
-    .min(1, 'Ingresá un alias o CVU.')
-    .refine(value => /^\d{22}$/.test(value) || /^[a-zA-Z0-9.]{6,20}$/.test(value), 'El alias tiene de 6 a 20 caracteres y el CVU, 22 números.'),
-  amount: z
-    .string()
-    .trim()
-    .min(1, 'Ingresá cuánto querés transferir.')
-    .refine(value => parseMoney(value) !== null, 'Usá solo números y hasta dos decimales, por ejemplo 1500,50.')
-    .refine(value => (parseMoney(value) ?? 0) <= TRANSFER_LIMIT, `El máximo por transferencia es ${formatCurrency(TRANSFER_LIMIT)}.`),
-  note: z.string().trim().max(60, 'Máximo 60 caracteres.').optional(),
-});
-
-function TransferForm({ balance, onReview }) {
-  const { register, handleSubmit, setValue, setError, formState: { errors } } = useForm({
-    resolver: zodResolver(transferSchema),
-    mode: 'onTouched',
-  });
-
-  function submit(values) {
-    const amount = parseMoney(values.amount);
-    if (amount > balance) {
-      setError('amount', { message: `Tu saldo disponible es ${formatCurrency(balance)}.` });
-      return;
-    }
-    const recipient = resolveRecipient(values.destination);
-    if (!recipient) {
-      setError('destination', { message: 'No encontramos una cuenta con ese alias o CVU.' });
-      return;
-    }
-    onReview({ destination: values.destination.trim(), amount, note: values.note, recipient });
-  }
-
-  return (
-    <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
-      <form onSubmit={handleSubmit(submit)} noValidate className={`m-0 grid max-w-none gap-5 ${panelClass}`}>
-        <h2 className={sectionTitleClass}>Datos de la transferencia</h2>
-        <Field id="destination" label="Alias o CVU" error={errors.destination}>
-          <IconInput icon={AtSign} id="destination" autoComplete="off" placeholder="nombre.apellido.padi" className={`${fieldInputClass} pl-11`} aria-invalid={!!errors.destination} {...register('destination')} />
-        </Field>
-        <Field id="amount" label="Monto" error={errors.amount} hint={`Disponible: ${formatCurrency(balance)}`}>
-          <MoneyInput id="amount" aria-invalid={!!errors.amount} {...register('amount')} />
-        </Field>
-        <Field id="note" label="Motivo (opcional)" error={errors.note}>
-          <IconInput icon={MessageSquareText} id="note" placeholder="Por ejemplo, alquiler" className={`${fieldInputClass} pl-11`} aria-invalid={!!errors.note} {...register('note')} />
-        </Field>
-        <button type="submit" className={`${primaryActionClass} mt-2`}>Continuar</button>
-      </form>
-
-      <section aria-labelledby="contacts-title" className={`m-0 grid gap-3 border-0 ${panelClass}`}>
-        <h2 id="contacts-title" className={sectionTitleClass}>Contactos frecuentes</h2>
-        <ul className="m-0 grid list-none gap-2 p-0">
-          {Object.entries(mockContacts).map(([key, name]) => (
-            <li key={key}>
-              <button
-                type="button"
-                onClick={() => setValue('destination', key, { shouldValidate: true })}
-                className="m-0 flex w-full items-center gap-3 rounded-2xl border-0 bg-[#F8F7FD] p-3 text-left hover:bg-[#F3F1F9] dark:bg-[#1E1735] dark:hover:bg-[#281F45]"
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#E6DFFB] text-[#4C1DB8] dark:bg-[#281F45] dark:text-[#B9A6FF]">
-                  <UserRound className="size-5" aria-hidden="true" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-[#1C1633] dark:text-[#F4F2FA]">{name}</span>
-                  <span className="block truncate font-mono text-xs text-[#8C87A3] dark:text-[#9D97B5]">{key}</span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
-  );
-}
+const stepTitles = ['¿A quién le transferís?', '¿Cuánto querés transferir?', 'Revisá antes de confirmar', 'Transferencia enviada'];
 
 function TransferContent({ summary }) {
   const navigate = useNavigate();
   const transfer = useWalletStore(state => state.transfer);
+  const [step, setStep] = useState(0);
+  const [recipient, setRecipient] = useState(null);
   const [draft, setDraft] = useState(null);
+  const [idempotencyKey, setIdempotencyKey] = useState(null);
   const [receipt, setReceipt] = useState(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
+  function review(values) {
+    setDraft(values);
+    setIdempotencyKey(crypto.randomUUID());
+    setError('');
+    setStep(2);
+  }
+
   async function confirm() {
+    if (sending) return;
     setSending(true);
     setError('');
     try {
-      setReceipt(await transfer(draft));
+      setReceipt(await transfer({ destination: recipient.destination, ...draft, idempotencyKey }));
+      setStep(3);
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -113,57 +47,82 @@ function TransferContent({ summary }) {
     }
   }
 
-  if (receipt) {
-    return (
-      <div className={`mx-auto max-w-lg ${panelClass}`}>
-        <ResultCard
-          title="Transferencia enviada"
-          amount={formatCurrency(-receipt.amount)}
-          rows={[
-            { label: 'Para', value: receipt.recipient },
-            { label: 'Alias o CVU', value: receipt.destination, mono: true },
-            { label: 'Fecha', value: formatDateTime(receipt.createdAt), mono: true },
-            { label: 'Número de operación', value: receipt.id, mono: true },
-          ]}
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            <button type="button" onClick={() => { setReceipt(null); setDraft(null); }} className={secondaryActionClass}>Hacer otra</button>
-            <button type="button" onClick={() => navigate(routes.home)} className={primaryActionClass}>Volver al inicio</button>
+  function restart() {
+    setStep(0);
+    setRecipient(null);
+    setDraft(null);
+    setReceipt(null);
+  }
+
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-7 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+      <section aria-label="Transferencia" className={`m-0 grid gap-6 ${panelClass}`}>
+        <TransferStepper current={step} />
+        {step < 3 && <h2 className={sectionTitleClass}>{stepTitles[step]}</h2>}
+
+        {step === 0 && <RecipientStep account={summary.account} onConfirm={found => { setRecipient(found); setStep(1); }} />}
+        {step === 1 && <AmountStep balance={summary.balance} draft={draft} onBack={() => setStep(0)} onContinue={review} />}
+        {step === 2 && (
+          <ReviewStep
+            holder={summary.holder}
+            account={summary.account}
+            recipient={recipient}
+            draft={draft}
+            sending={sending}
+            error={error}
+            onBack={() => setStep(1)}
+            onConfirm={confirm}
+          />
+        )}
+        {step === 3 && (
+          <ResultCard
+            title={stepTitles[3]}
+            amount={formatCurrency(-receipt.amount)}
+            rows={[
+              { label: 'Para', value: receipt.recipient.name },
+              { label: 'CUIT/CUIL', value: formatCuit(receipt.recipient.cuit), mono: true },
+              { label: 'Entidad', value: receipt.recipient.bank },
+              { label: 'Motivo', value: receipt.detail },
+              { label: 'Fecha', value: formatDateTime(receipt.createdAt), mono: true },
+              { label: 'N.º de operación', value: receipt.id, mono: true },
+              { label: 'Tu saldo ahora', value: formatCurrency(summary.balance), mono: true },
+            ]}
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button type="button" onClick={restart} className={secondaryActionClass}>Realizar otra transferencia</button>
+              <button type="button" onClick={() => navigate(routes.home)} className={primaryActionClass}>Volver al inicio</button>
+            </div>
+          </ResultCard>
+        )}
+      </section>
+
+      <aside aria-label="Condiciones de la transferencia" className={`hidden gap-4 lg:grid ${panelClass}`}>
+        <div>
+          <p className="m-0 text-sm text-[#8C87A3] dark:text-[#9D97B5]">Saldo disponible</p>
+          <p className="m-0 mt-1 font-mono text-2xl font-semibold">{formatCurrency(summary.balance)}</p>
+        </div>
+        <dl className="m-0 grid gap-2 text-sm">
+          <div className="flex justify-between gap-3">
+            <dt className="text-[#8C87A3] dark:text-[#9D97B5]">Límite por transferencia</dt>
+            <dd className="m-0 font-mono">{formatCurrency(TRANSFER_LIMIT)}</dd>
           </div>
-        </ResultCard>
-      </div>
-    );
-  }
-
-  if (draft) {
-    return (
-      <div className={`mx-auto grid max-w-lg gap-6 ${panelClass}`}>
-        <h2 className={sectionTitleClass}>Revisá antes de transferir</h2>
-        <div className="rounded-2xl bg-[#F8F7FD] p-5 text-center dark:bg-[#1E1735]">
-          <p className="m-0 text-sm text-[#8C87A3] dark:text-[#9D97B5]">Vas a transferir</p>
-          <p className="mt-1 mb-0 font-mono text-3xl font-semibold">{formatCurrency(draft.amount)}</p>
-          <p className="mt-3 mb-0 text-sm">a <span className="font-semibold">{draft.recipient}</span></p>
-          <p className="mt-0.5 mb-0 font-mono text-xs text-[#8C87A3] dark:text-[#9D97B5]">{draft.destination}</p>
-          {draft.note && <p className="mt-3 mb-0 text-sm text-[#4A4560] dark:text-[#9D97B5]">Motivo: {draft.note}</p>}
-        </div>
-        {error && <p role="alert" className={alertClass}>{error}</p>}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button type="button" onClick={() => setDraft(null)} disabled={sending} className={secondaryActionClass}>Modificar</button>
-          <button type="button" onClick={confirm} disabled={sending} className={`${primaryActionClass} inline-flex items-center justify-center gap-2`}>
-            {sending && <Loader2 className="size-4 animate-spin" />}
-            {sending ? 'Transfiriendo…' : 'Transferir'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return <TransferForm balance={summary.balance} onReview={setDraft} />;
+          <div className="flex justify-between gap-3">
+            <dt className="text-[#8C87A3] dark:text-[#9D97B5]">Comisión</dt>
+            <dd className="m-0 font-mono">{formatCurrency(0)}</dd>
+          </div>
+        </dl>
+        <p className="m-0 flex gap-2 rounded-xl bg-[#F3F1F9] p-3 text-xs text-[#4A4560] dark:bg-[#1E1735] dark:text-[#9D97B5]">
+          <ShieldCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+          Cada transferencia lleva una clave única: si se corta la conexión y reintentás, no se cobra dos veces.
+        </p>
+      </aside>
+    </div>
+  );
 }
 
 export default function TransferPage() {
   return (
-    <AppLayout header={() => <PageHeader title="Transferir" subtitle="Enviá dinero a otra cuenta con su alias o CVU." />}>
+    <AppLayout header={() => <PageHeader title="Transferir" subtitle="Enviá dinero con alias, CVU o CBU." />}>
       {summary => <TransferContent summary={summary} />}
     </AppLayout>
   );

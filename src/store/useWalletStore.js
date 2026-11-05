@@ -3,6 +3,7 @@ import { fetchWalletSummary, mockTiming, resolveRecipient, wait } from '@/servic
 
 const newId = () => `PD-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 const roundMoney = value => Math.round(value * 100) / 100;
+const transferReceipts = new Map();
 
 export class WalletError extends Error {
   constructor(code, message) {
@@ -43,8 +44,9 @@ export const useWalletStore = create((set, get) => ({
       };
     }),
 
-  transfer: async ({ destination, amount, note }) => {
+  transfer: async ({ destination, amount, reason, idempotencyKey }) => {
     await wait(mockTiming.network);
+    if (transferReceipts.has(idempotencyKey)) return transferReceipts.get(idempotencyKey);
     const { summary } = get();
     const recipient = resolveRecipient(destination);
     if (!recipient) throw new WalletError('RECIPIENT_NOT_FOUND', 'No encontramos una cuenta con ese alias o CVU.');
@@ -52,14 +54,16 @@ export const useWalletStore = create((set, get) => ({
     const movement = {
       id: newId(),
       kind: 'transferOut',
-      title: `Transferencia a ${recipient}`,
-      detail: note ? note : 'Transferencia enviada',
+      title: `Transferencia a ${recipient.name}`,
+      detail: reason,
       amount: -amount,
       status: 'completed',
       createdAt: new Date().toISOString(),
     };
     get().addMovement(movement);
-    return { ...movement, recipient, destination: destination.trim() };
+    const receipt = { ...movement, recipient };
+    transferReceipts.set(idempotencyKey, receipt);
+    return receipt;
   },
 
   topUp: async amount => {
