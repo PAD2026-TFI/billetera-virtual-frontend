@@ -38,11 +38,12 @@ const mockWalletSummary = {
   }
 })(mockWalletSummary);
 
-export const mockContacts = {
-  'lucia.gomez.padi': 'Lucía Gómez',
-  'martin.ruiz.padi': 'Martín Ruiz',
-  'diego.sosa.padi': 'Diego Sosa',
-  '0000003100098765432109': 'Sofía Herrera',
+const mockRecipients = {
+  'lucia.gomez.padi': { name: 'Lucía Gómez', cuit: '27384561238', bank: 'padi.', frequent: true },
+  'martin.ruiz.padi': { name: 'Martín Ruiz', cuit: '20351234567', bank: 'padi.', frequent: true },
+  'diego.sosa.padi': { name: 'Diego Sosa', cuit: '20402345671', bank: 'padi.', frequent: true },
+  '0000003100098765432109': { name: 'Sofía Herrera', cuit: '27367654320', bank: 'padi.', frequent: true },
+  '2850590940090418135201': { name: 'Tomás Acosta', cuit: '20298765437', bank: 'Banco Macro', frequent: false },
 };
 
 export const mockQrPayments = [
@@ -60,5 +61,15 @@ export async function fetchWalletSummary() {
 
 export function resolveRecipient(destination) {
   const key = destination.trim().toLowerCase();
-  return mockContacts[key] ?? null;
+  const recipient = mockRecipients[key];
+  return recipient ? { destination: key, name: recipient.name, cuit: recipient.cuit, bank: recipient.bank } : null;
+}
+
+export const frequentContacts = Object.keys(mockRecipients)
+  .filter(destination => mockRecipients[destination].frequent)
+  .map(resolveRecipient);
+
+export async function lookupRecipient(destination) {
+  await wait(mockTiming.network);
+  return resolveRecipient(destination);
 }
