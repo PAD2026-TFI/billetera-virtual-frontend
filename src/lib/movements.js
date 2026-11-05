@@ -1,6 +1,3 @@
-// Lógica pura del historial de movimientos (filtros, agrupación y totales).
-// La vista trabaja con este modelo:
-// { id, kind, title, detail, amount (con signo), status, createdAt, balanceAfter?, reference? }
 
 export const typeFilters = [
   { id: 'all', label: 'Todos', test: () => true },
@@ -19,7 +16,6 @@ export const dateRanges = [
 
 const startOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-// Las fechas de <input type="date"> llegan como AAAA-MM-DD y se interpretan en hora local.
 const parseInputDate = value => {
   const [year, month, day] = (value ?? '').split('-').map(Number);
   return year && month && day ? new Date(year, month - 1, day) : null;
@@ -58,7 +54,6 @@ export function filterMovements(movements, { type = 'all', range = 'all', custom
   });
 }
 
-// Solo suma lo acreditado: una carga pendiente todavía no movió el saldo.
 export function summarize(movements) {
   let income = 0;
   let expense = 0;
@@ -82,7 +77,6 @@ export function dayLabel(date, now = new Date()) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-// Agrupa por día manteniendo el orden cronológico descendente.
 export function groupByDay(movements, now = new Date()) {
   const sorted = [...movements].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const groups = [];
@@ -96,8 +90,6 @@ export function groupByDay(movements, now = new Date()) {
   return groups;
 }
 
-// Adapta un movimiento de GET /api/wallets/me/movements al modelo de la vista.
-// El backend devuelve el monto siempre positivo y el sentido en `type` (Credit / Debit).
 const sourceKinds = {
   Transfer: { Credit: 'transferIn', Debit: 'transferOut' },
   Payment: { Credit: 'topUp', Debit: 'payment' },

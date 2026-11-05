@@ -2,6 +2,7 @@ import { ArrowLeftRight, CreditCard, Home, ListOrdered, LogOut, Moon, Plus, QrCo
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Wordmark } from '@/components/auth/AuthLayout';
 import { routes, sectionFromPath } from '@/lib/routes';
+import { useSignOut } from '@/store/useAuthStore';
 import { useThemeStore } from '@/store/useThemeStore';
 
 const sections = [
@@ -18,6 +19,7 @@ const sections = [
 export default function Sidebar() {
   const navigate = useNavigate();
   const active = sectionFromPath(useLocation().pathname);
+  const signOut = useSignOut();
   const { theme, toggleTheme } = useThemeStore();
   const isDark = theme === 'dark';
   const ThemeIcon = isDark ? Sun : Moon;
@@ -62,7 +64,7 @@ export default function Sidebar() {
       </button>
       <button
         type="button"
-        onClick={() => navigate(routes.login)}
+        onClick={signOut}
         className="m-0 flex h-11 items-center gap-3 rounded-xl border-0 bg-transparent px-3 text-sm font-medium text-white/65 hover:bg-white/5 hover:text-white"
       >
         <LogOut className="size-[18px]" aria-hidden="true" />

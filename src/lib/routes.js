@@ -5,7 +5,10 @@ export const routes = {
   topUp: '/cargar',
   pay: '/pagar',
   card: '/tarjeta',
-  login: '/',
+  sandbox: '/sandbox',
+  paymentReturn: '/payments/return',
+  login: '/login',
+  register: '/registro',
 };
 
 export function sectionFromPath(pathname) {

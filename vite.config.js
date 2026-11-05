@@ -3,7 +3,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-// Los tests formatean fechas: fijamos la zona horaria para que den igual en cualquier máquina y en CI.
 process.env.TZ ??= 'America/Argentina/Buenos_Aires';
 
 export default defineConfig({

@@ -29,7 +29,6 @@ const mockWalletSummary = {
   cardRequest: null,
 };
 
-// Saldo posterior de cada movimiento acreditado, como lo registra el libro mayor del backend.
 (function assignBalanceAfter(summary) {
   let balance = summary.balance;
   for (const movement of summary.recentMovements) {
