@@ -23,7 +23,6 @@ describe('MovementsPage', () => {
     const summary = await screen.findByLabelText('Resumen del período filtrado');
     await user.click(screen.getByRole('button', { name: 'Pagos QR' }));
     expect(within(summary).getByText(/\+\$\s0,00/)).toBeInTheDocument();
-    // Egresos y balance neto coinciden porque no hay ingresos en pagos QR.
     expect(within(summary).getAllByText(/−\$\s36\.400,50/)).toHaveLength(2);
   });
 

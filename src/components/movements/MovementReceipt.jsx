@@ -43,11 +43,7 @@ export default function MovementReceipt({ movement, onClose }) {
   async function share() {
     const text = receiptText(movement);
     if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Comprobante padi.', text });
-      } catch {
-        // El usuario canceló el diálogo de compartir.
-      }
+      await navigator.share({ title: 'Comprobante padi.', text }).catch(() => {});
     } else {
       await copy(text, 'receipt');
     }

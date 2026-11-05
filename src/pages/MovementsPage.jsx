@@ -8,7 +8,6 @@ import MovementsSummary from '@/components/movements/MovementsSummary';
 import MovementReceipt from '@/components/movements/MovementReceipt';
 import { dateRanges, filterMovements, summarize, typeFilters } from '@/lib/movements';
 
-// Igual que el backend (GET /api/wallets/me/movements?limit=20), mostramos de a 20 movimientos.
 export const PAGE_SIZE = 20;
 
 const initialFilters = { type: 'all', range: 'all', custom: { from: '', to: '' }, query: '' };
