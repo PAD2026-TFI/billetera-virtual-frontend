@@ -9,6 +9,7 @@ export const routes = {
   paymentReturn: '/payments/return',
   login: '/login',
   register: '/registro',
+  forgotPassword: '/recuperar',
 };
 
 export function sectionFromPath(pathname) {

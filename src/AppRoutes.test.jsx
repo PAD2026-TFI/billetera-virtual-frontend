@@ -81,13 +81,13 @@ describe('rutas públicas', () => {
     expect(await screen.findByRole('navigation', { name: 'Acciones rápidas' })).toBeInTheDocument();
   });
 
-  it('desde el login se llega al registro y se vuelve', async () => {
+  it('desde el login se llega al registro y a recuperar la contraseña', async () => {
     const person = userEvent.setup();
     renderAt('/login');
     await person.click(screen.getByRole('button', { name: 'Crear una cuenta' }));
-    expect(screen.getByRole('heading', { name: 'Crear cuenta' })).toBeInTheDocument();
-    await person.click(screen.getByRole('button', { name: 'Ya tengo cuenta' }));
-    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument();
+    await person.click(await screen.findByRole('button', { name: 'Ya tengo cuenta' }));
+    await person.click(await screen.findByRole('button', { name: '¿Olvidaste tu contraseña?' }));
+    expect(await screen.findByRole('heading', { name: 'Recuperar contraseña' })).toBeInTheDocument();
   });
 });
 
