@@ -1,24 +1,38 @@
-import { create } from 'zustand';
-import { useNavigate } from 'react-router-dom';
-import { api } from '@/services/api';
-import { routes } from '@/lib/routes';
+import { create } from "zustand";
+import { useNavigate } from "react-router-dom";
+import { api } from "@/services/api";
+import { routes } from "@/lib/routes";
 
-export const useAuthStore = create(set => ({
+export const useAuthStore = create((set) => ({
   session: null,
 
-  signIn: async credentials => {
+  signIn: async (credentials) => {
     try {
-      const { accessToken, expiresIn } = await api('/api/auth/login', { method: 'POST', body: credentials });
-      const user = await api('/api/users/me', { token: accessToken });
-      set({ session: { token: accessToken, user, expiresAt: Date.now() + expiresIn * 1000 } });
-    } catch (e) {
-      if (e?.status) throw e;
-      const email = credentials?.email || 'usuario@padi.com';
-      const name = email.split('@')[0] || 'Usuario';
+      const { accessToken, expiresIn } = await api("/api/auth/login", {
+        method: "POST",
+        body: credentials,
+      });
+      const user = await api("/api/users/me", { token: accessToken });
       set({
         session: {
-          token: 'mock-jwt-token',
-          user: { id: 'usr-mock-1', firstName: name.charAt(0).toUpperCase() + name.slice(1), lastName: '', email },
+          token: accessToken,
+          user,
+          expiresAt: Date.now() + expiresIn * 1000,
+        },
+      });
+    } catch (e) {
+      if (e?.status) throw e;
+      const email = credentials?.email || "usuario@padi.com";
+      const name = email.split("@")[0] || "Usuario";
+      set({
+        session: {
+          token: "mock-jwt-token",
+          user: {
+            id: "usr-mock-1",
+            firstName: name.charAt(0).toUpperCase() + name.slice(1),
+            lastName: "",
+            email,
+          },
           expiresAt: Date.now() + 86400 * 1000,
         },
       });
@@ -29,11 +43,12 @@ export const useAuthStore = create(set => ({
   logout: () => set({ session: null }),
 }));
 
-export const hasActiveSession = session => session !== null && session.expiresAt > Date.now();
+export const hasActiveSession = (session) =>
+  session !== null && session.expiresAt > Date.now();
 
 export function useSignOut() {
   const navigate = useNavigate();
-  const signOut = useAuthStore(state => state.signOut);
+  const signOut = useAuthStore((state) => state.signOut);
   return () => {
     navigate(routes.login, { replace: true });
     signOut();

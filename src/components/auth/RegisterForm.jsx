@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { AnimatePresence, motion } from 'motion/react';
+import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,69 +15,69 @@ import {
   Lock,
   Mail,
   User,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { cn } from 'cn';
-import { IconInput, PasswordInput } from './IconInput.jsx';
-import { Divider } from './LoginForm.jsx';
-import DniScanStep from './DniScanStep.jsx';
-import FacialScanStep from './FacialScanStep.jsx';
-import RegisterSuccessModal from './RegisterSuccessModal.jsx';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { cn } from "cn";
+import { IconInput, PasswordInput } from "./IconInput.jsx";
+import { Divider } from "./LoginForm.jsx";
+import DniScanStep from "./DniScanStep.jsx";
+import FacialScanStep from "./FacialScanStep.jsx";
+import RegisterSuccessModal from "./RegisterSuccessModal.jsx";
 import {
   alertClass,
   inputClass,
   labelClass,
   primaryButtonClass,
   secondaryButtonClass,
-} from './styles.js';
+} from "./styles.js";
 
 const registerSchema = z
   .object({
     firstName: z
       .string()
       .trim()
-      .min(1, 'Ingresá tu nombre.')
-      .max(64, 'Máximo 64 caracteres.'),
+      .min(1, "Ingresá tu nombre.")
+      .max(64, "Máximo 64 caracteres."),
     lastName: z
       .string()
       .trim()
-      .min(1, 'Ingresá tu apellido.')
-      .max(64, 'Máximo 64 caracteres.'),
+      .min(1, "Ingresá tu apellido.")
+      .max(64, "Máximo 64 caracteres."),
     dni: z
       .string()
       .trim()
-      .min(1, 'Ingresá tu DNI.')
-      .regex(/^\d{7,8}$/, 'Ingresá un DNI válido (7 u 8 números).'),
+      .min(1, "Ingresá tu DNI.")
+      .regex(/^\d{7,8}$/, "Ingresá un DNI válido (7 u 8 números)."),
     email: z
       .string()
       .trim()
-      .min(1, 'Ingresá tu correo electrónico.')
-      .email('Ingresá un correo electrónico válido.')
-      .max(254, 'Máximo 254 caracteres.'),
+      .min(1, "Ingresá tu correo electrónico.")
+      .email("Ingresá un correo electrónico válido.")
+      .max(254, "Máximo 254 caracteres."),
     password: z
       .string()
-      .min(8, 'Mínimo 8 caracteres.')
-      .regex(/[A-Z]/, 'Debe incluir al menos una mayúscula.')
-      .regex(/[a-z]/, 'Debe incluir al menos una minúscula.')
-      .regex(/[0-9]/, 'Debe incluir al menos un número.'),
-    confirmPassword: z.string().min(1, 'Repetí tu contraseña.'),
+      .min(8, "Mínimo 8 caracteres.")
+      .regex(/[A-Z]/, "Debe incluir al menos una mayúscula.")
+      .regex(/[a-z]/, "Debe incluir al menos una minúscula.")
+      .regex(/[0-9]/, "Debe incluir al menos un número."),
+    confirmPassword: z.string().min(1, "Repetí tu contraseña."),
   })
-  .refine(data => data.password === data.confirmPassword, {
-    message: 'Las contraseñas no coinciden.',
-    path: ['confirmPassword'],
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Las contraseñas no coinciden.",
+    path: ["confirmPassword"],
   });
 
 export default function RegisterForm({ onRegistered, onCancel }) {
   const [step, setStep] = useState(1);
-  const [toast, setToast] = useState('');
+  const [toast, setToast] = useState("");
   const [countdown, setCountdown] = useState(0);
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [verifiedIndex, setVerifiedIndex] = useState(-1);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCodeVerified, setIsCodeVerified] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState('');
+  const [serverError, setServerError] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registeredUser, setRegisteredUser] = useState(null);
 
@@ -92,33 +92,35 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerSchema),
-    mode: 'onTouched',
+    mode: "onTouched",
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      dni: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
+      firstName: "",
+      lastName: "",
+      dni: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
-  const password = watch('password') || '';
-  const confirmPassword = watch('confirmPassword') || '';
-  const firstName = watch('firstName') || '';
-  const lastName = watch('lastName') || '';
+  const password = watch("password") || "";
+  const confirmPassword = watch("confirmPassword") || "";
+  const firstName = watch("firstName") || "";
+  const lastName = watch("lastName") || "";
 
   const hasMinLength = password.length >= 8;
   const hasUppercase = /[A-Z]/.test(password);
   const hasLowercase = /[a-z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
-  const isPasswordValid = hasMinLength && hasUppercase && hasLowercase && hasNumber;
-  const passwordsMatch = confirmPassword.length > 0 && confirmPassword === password;
+  const isPasswordValid =
+    hasMinLength && hasUppercase && hasLowercase && hasNumber;
+  const passwordsMatch =
+    confirmPassword.length > 0 && confirmPassword === password;
 
   useEffect(() => {
     if (step !== 3 || countdown <= 0) return;
     const timer = setInterval(() => {
-      setCountdown(c => (c > 0 ? c - 1 : 0));
+      setCountdown((c) => (c > 0 ? c - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
   }, [step, countdown]);
@@ -132,27 +134,33 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   }, [step]);
 
   useEffect(() => {
-    const fullCode = otp.join('');
+    const fullCode = otp.join("");
     if (fullCode.length === 6 && !isCodeVerified && !isVerifying) {
       setIsVerifying(true);
       setVerifiedIndex(-1);
 
       for (let i = 0; i < 6; i++) {
-        setTimeout(() => {
-          setVerifiedIndex(i);
-        }, (i + 1) * 110);
+        setTimeout(
+          () => {
+            setVerifiedIndex(i);
+          },
+          (i + 1) * 110,
+        );
       }
 
-      setTimeout(() => {
-        setIsVerifying(false);
-        setIsCodeVerified(true);
-      }, 6 * 110 + 200);
+      setTimeout(
+        () => {
+          setIsVerifying(false);
+          setIsCodeVerified(true);
+        },
+        6 * 110 + 200,
+      );
     }
   }, [otp, isCodeVerified, isVerifying]);
 
   async function handleStep1Submit(e) {
     e.preventDefault();
-    const valid = await trigger(['firstName', 'lastName', 'dni']);
+    const valid = await trigger(["firstName", "lastName", "dni"]);
     if (valid) {
       setStep(2);
     }
@@ -160,11 +168,11 @@ export default function RegisterForm({ onRegistered, onCancel }) {
 
   async function handleSendCode(e) {
     e?.preventDefault();
-    const valid = await trigger('email');
+    const valid = await trigger("email");
     if (!valid) return;
     setCountdown(60);
-    setToast('¡Código enviado! Revisá tu casilla de correo.');
-    setOtp(['', '', '', '', '', '']);
+    setToast("¡Código enviado! Revisá tu casilla de correo.");
+    setOtp(["", "", "", "", "", ""]);
     setVerifiedIndex(-1);
     setIsCodeVerified(false);
     setStep(3);
@@ -172,8 +180,8 @@ export default function RegisterForm({ onRegistered, onCancel }) {
 
   function handleResendCode() {
     setCountdown(60);
-    setToast('¡Código reenviado! Revisá tu casilla de correo.');
-    setOtp(['', '', '', '', '', '']);
+    setToast("¡Código reenviado! Revisá tu casilla de correo.");
+    setOtp(["", "", "", "", "", ""]);
     setVerifiedIndex(-1);
     setIsCodeVerified(false);
     setTimeout(() => {
@@ -182,7 +190,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   }
 
   function handleOtpChange(index, value) {
-    const char = value.replace(/\D/g, '').slice(-1);
+    const char = value.replace(/\D/g, "").slice(-1);
     const nextOtp = [...otp];
     nextOtp[index] = char;
     setOtp(nextOtp);
@@ -193,24 +201,27 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   }
 
   function handleOtpKeyDown(index, e) {
-    if (e.key === 'Backspace') {
+    if (e.key === "Backspace") {
       if (!otp[index] && index > 0) {
         otpRefs.current[index - 1]?.focus();
       }
-    } else if (e.key === 'ArrowLeft' && index > 0) {
+    } else if (e.key === "ArrowLeft" && index > 0) {
       otpRefs.current[index - 1]?.focus();
-    } else if (e.key === 'ArrowRight' && index < 5) {
+    } else if (e.key === "ArrowRight" && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
   }
 
   function handleOtpPaste(e) {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (!pasted) return;
     const nextOtp = [...otp];
     for (let i = 0; i < 6; i++) {
-      nextOtp[i] = pasted[i] || '';
+      nextOtp[i] = pasted[i] || "";
     }
     setOtp(nextOtp);
     const nextIndex = Math.min(pasted.length, 5);
@@ -219,13 +230,13 @@ export default function RegisterForm({ onRegistered, onCancel }) {
 
   async function handlePasswordSubmit(e) {
     e.preventDefault();
-    const valid = await trigger(['password', 'confirmPassword']);
+    const valid = await trigger(["password", "confirmPassword"]);
     if (!valid) return;
     setStep(5);
   }
 
   async function handleFinalSubmit() {
-    setServerError('');
+    setServerError("");
     setIsSubmitting(true);
 
     const values = getValues();
@@ -238,18 +249,18 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     };
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 600));
       const mockUser = {
-        id: 'user-' + Date.now(),
-        firstName: body.firstName || 'Usuario',
-        lastName: body.lastName || '',
+        id: "user-" + Date.now(),
+        firstName: body.firstName || "Usuario",
+        lastName: body.lastName || "",
         email: body.email,
         dni: body.dni,
       };
       setRegisteredUser(mockUser);
       setShowSuccessModal(true);
     } catch {
-      setServerError('Ocurrió un error inesperado. Por favor reintentá.');
+      setServerError("Ocurrió un error inesperado. Por favor reintentá.");
     } finally {
       setIsSubmitting(false);
     }
@@ -270,16 +281,16 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          {[1, 2, 3, 4, 5, 6].map(i => (
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <span
               key={i}
               className={cn(
-                'h-1.5 rounded-full transition-all duration-300',
+                "h-1.5 rounded-full transition-all duration-300",
                 i === step
-                  ? 'w-6 bg-[#5B2EE0]'
+                  ? "w-6 bg-[#5B2EE0]"
                   : i < step
-                  ? 'w-2 bg-[#FFD54A]'
-                  : 'w-2 bg-[#ECE9F5]'
+                    ? "w-2 bg-[#FFD54A]"
+                    : "w-2 bg-[#ECE9F5]",
               )}
             />
           ))}
@@ -318,7 +329,11 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             Completá tus datos personales para empezar.
           </p>
 
-          <form onSubmit={handleStep1Submit} noValidate className="m-0 grid max-w-none gap-3">
+          <form
+            onSubmit={handleStep1Submit}
+            noValidate
+            className="m-0 grid max-w-none gap-3"
+          >
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="reg-firstName" className={labelClass}>
@@ -331,7 +346,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                   placeholder="Ej. Juan"
                   className={inputClass}
                   aria-invalid={!!errors.firstName}
-                  {...register('firstName')}
+                  {...register("firstName")}
                 />
                 {errors.firstName && (
                   <p role="alert" className="m-0 text-xs text-red-600">
@@ -351,7 +366,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                   placeholder="Ej. Pérez"
                   className={inputClass}
                   aria-invalid={!!errors.lastName}
-                  {...register('lastName')}
+                  {...register("lastName")}
                 />
                 {errors.lastName && (
                   <p role="alert" className="m-0 text-xs text-red-600">
@@ -372,10 +387,10 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                 placeholder="Ej. 40123456"
                 className={inputClass}
                 aria-invalid={!!errors.dni}
-                {...register('dni', {
-                  onChange: e => {
-                    const clean = e.target.value.replace(/\D/g, '').slice(0, 8);
-                    setValue('dni', clean, { shouldValidate: true });
+                {...register("dni", {
+                  onChange: (e) => {
+                    const clean = e.target.value.replace(/\D/g, "").slice(0, 8);
+                    setValue("dni", clean, { shouldValidate: true });
                   },
                 })}
               />
@@ -431,7 +446,11 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             Ingresá tu correo para recibir un código de verificación.
           </p>
 
-          <form onSubmit={handleSendCode} noValidate className="m-0 grid max-w-none gap-3">
+          <form
+            onSubmit={handleSendCode}
+            noValidate
+            className="m-0 grid max-w-none gap-3"
+          >
             <div className="grid gap-1.5">
               <Label htmlFor="reg-email" className={labelClass}>
                 Correo electrónico
@@ -444,7 +463,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                 placeholder="nombre@correo.com"
                 className={inputClass}
                 aria-invalid={!!errors.email}
-                {...register('email')}
+                {...register("email")}
               />
               {errors.email && (
                 <p role="alert" className="m-0 text-xs text-red-600">
@@ -486,7 +505,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             type="button"
             onClick={() => {
               setStep(2);
-              setToast('');
+              setToast("");
             }}
             className="mb-1.5 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-[#5B2EE0] transition-colors hover:text-[#3D1499] focus:outline-none"
           >
@@ -498,8 +517,8 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             Ingresá el código
           </h1>
           <p className="mt-0.5 mb-3 text-xs text-[#8C87A3]">
-            Enviamos un código de 6 dígitos a{' '}
-            <strong className="text-[#1C1633]">{watch('email') || ''}</strong>
+            Enviamos un código de 6 dígitos a{" "}
+            <strong className="text-[#1C1633]">{watch("email") || ""}</strong>
           </p>
 
           <div className="mb-3.5 flex items-center justify-between gap-1.5">
@@ -509,24 +528,24 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               return (
                 <input
                   key={i}
-                  ref={el => (otpRefs.current[i] = el)}
+                  ref={(el) => (otpRefs.current[i] = el)}
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={1}
                   value={digit}
                   disabled={isCodeVerified || isVerifying}
-                  onChange={e => handleOtpChange(i, e.target.value)}
-                  onKeyDown={e => handleOtpKeyDown(i, e)}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
                   onPaste={i === 0 ? handleOtpPaste : undefined}
                   className={cn(
-                    'h-12 w-11 rounded-xl text-center font-mono text-xl font-bold transition-all duration-150',
-                    'border-2 outline-none',
+                    "h-12 w-11 rounded-xl text-center font-mono text-xl font-bold transition-all duration-150",
+                    "border-2 outline-none",
                     isVerified
-                      ? '!border-emerald-500 !bg-emerald-50 text-emerald-700 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                      ? "border-emerald-500! bg-emerald-50! text-emerald-700 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
                       : isFilled
-                      ? 'border-[#5B2EE0] bg-[#FAF8FE] text-[#1C1633]'
-                      : 'border-transparent bg-[#F3F1F9] text-[#1C1633] focus:border-[#5B2EE0] focus:bg-white focus:ring-2 focus:ring-[#5B2EE0]/30'
+                        ? "border-[#5B2EE0] bg-[#FAF8FE] text-[#1C1633]"
+                        : "border-transparent bg-[#F3F1F9] text-[#1C1633] focus:border-[#5B2EE0] focus:bg-white focus:ring-2 focus:ring-[#5B2EE0]/30",
                   )}
                   aria-label={`Dígito ${i + 1}`}
                 />
@@ -537,7 +556,10 @@ export default function RegisterForm({ onRegistered, onCancel }) {
           <div className="mb-4 flex items-center justify-between text-xs text-[#8C87A3]">
             {countdown > 0 ? (
               <span>
-                Reenviar código en <strong className="font-mono text-[#5B2EE0]">{countdown}s</strong>
+                Reenviar código en{" "}
+                <strong className="font-mono text-[#5B2EE0]">
+                  {countdown}s
+                </strong>
               </span>
             ) : (
               <button
@@ -548,7 +570,9 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                 Reenviar código
               </button>
             )}
-            <span className="text-[11px] text-[#ABA6C2]">6 dígitos numéricos</span>
+            <span className="text-[11px] text-[#ABA6C2]">
+              6 dígitos numéricos
+            </span>
           </div>
 
           {isVerifying && (
@@ -572,7 +596,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               <Button
                 type="button"
                 onClick={() => {
-                  setToast('');
+                  setToast("");
                   setStep(4);
                 }}
                 className={primaryButtonClass}
@@ -622,7 +646,11 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             Elegí una clave segura para proteger tus operaciones.
           </p>
 
-          <form onSubmit={handlePasswordSubmit} noValidate className="m-0 grid max-w-none gap-2">
+          <form
+            onSubmit={handlePasswordSubmit}
+            noValidate
+            className="m-0 grid max-w-none gap-2"
+          >
             <div className="grid gap-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
@@ -640,7 +668,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                 valid={isPasswordValid}
                 className={inputClass}
                 aria-invalid={!!errors.password}
-                {...register('password')}
+                {...register("password")}
               />
               {errors.password && (
                 <p role="alert" className="m-0 text-xs text-red-600">
@@ -661,19 +689,26 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                 valid={passwordsMatch}
                 className={inputClass}
                 aria-invalid={!!errors.confirmPassword}
-                {...register('confirmPassword')}
+                {...register("confirmPassword")}
               />
-              {(errors.confirmPassword || (!passwordsMatch && confirmPassword.length > 0)) && (
+              {(errors.confirmPassword ||
+                (!passwordsMatch && confirmPassword.length > 0)) && (
                 <p role="alert" className="m-0 text-xs text-red-600">
-                  {errors.confirmPassword?.message || 'Las contraseñas no coinciden.'}
+                  {errors.confirmPassword?.message ||
+                    "Las contraseñas no coinciden."}
                 </p>
               )}
             </div>
 
             <div className="rounded-xl bg-[#F8F6FD] p-2 text-xs">
-              <p className="m-0 mb-1 text-[11px] font-medium text-[#4A4560]">Requisitos de la contraseña:</p>
+              <p className="m-0 mb-1 text-[11px] font-medium text-[#4A4560]">
+                Requisitos de la contraseña:
+              </p>
               <div className="grid grid-cols-2 gap-1">
-                <RequirementItem met={hasMinLength} text="Mínimo 8 caracteres" />
+                <RequirementItem
+                  met={hasMinLength}
+                  text="Mínimo 8 caracteres"
+                />
                 <RequirementItem met={hasUppercase} text="Una mayúscula" />
                 <RequirementItem met={hasLowercase} text="Una minúscula" />
                 <RequirementItem met={hasNumber} text="Un número" />
@@ -760,8 +795,8 @@ function RequirementItem({ met, text }) {
   return (
     <div
       className={cn(
-        'flex items-center gap-1.5 transition-colors',
-        met ? 'font-medium text-emerald-600' : 'text-[#8C87A3]'
+        "flex items-center gap-1.5 transition-colors",
+        met ? "font-medium text-emerald-600" : "text-[#8C87A3]",
       )}
     >
       {met ? (
@@ -782,7 +817,7 @@ function PasswordTooltip() {
         type="button"
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen((o) => !o)}
         aria-label="Requisitos de contraseña"
         className="cursor-pointer border-0 bg-transparent p-0.5 text-[#9C96B5] transition-colors hover:text-[#5B2EE0] focus:outline-none"
       >
@@ -790,7 +825,9 @@ function PasswordTooltip() {
       </button>
       {open && (
         <div className="absolute bottom-full left-1/2 z-30 mb-2 w-56 -translate-x-1/2 rounded-2xl bg-[#1C1633] p-3 text-xs text-white shadow-xl dark:bg-[#231A3D]">
-          <p className="m-0 mb-1.5 font-semibold text-white">Formato de contraseña:</p>
+          <p className="m-0 mb-1.5 font-semibold text-white">
+            Formato de contraseña:
+          </p>
           <ul className="m-0 space-y-1 p-0 pl-3.5 text-[11px] text-[#ABA6C2]">
             <li>Mínimo 8 caracteres</li>
             <li>Al menos una mayúscula</li>
