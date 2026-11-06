@@ -1,40 +1,133 @@
-# Mi billetera · Flujo de pagos sandbox
+# padi. · Billetera virtual — Frontend
 
-Desarrollo una interfaz mínima en React y Vite para probar el Incremento 3 del backend. Puedo registrarme, iniciar sesión, crear mi billetera, consultar saldo y movimientos, preparar una carga de saldo y consultar su resultado. Dejo el diseño final y las demás pantallas para los siguientes cambios.
+Frontend de **padi.** (*Pagos Al Día*), la billetera virtual del trabajo final de PAD 2026. Está hecho con React y Vite, con diseño mobile-first, modo claro y oscuro, y se comunica con el [backend en ASP.NET Core](https://github.com/PAD2026-TFI/billetera-virtual-backend).
 
-## Ejecución
+> Entorno académico de pruebas: no se mueve dinero real.
 
-Uso Node 24 y el backend de la rama `feature/INC-003-pagos-mercadopago`.
+## Tecnologías
 
-```sh
-npm ci
+- **React 19 + Vite** como base.
+- **Tailwind CSS 4** y componentes de **shadcn/ui** y **Radix** para la interfaz, con íconos de **Lucide React**.
+- **React Router 7** para las rutas, con rutas protegidas.
+- **Zustand** para el estado global: sesión, billetera, avisos y tema.
+- **React Hook Form + Zod** para los formularios y sus validaciones.
+- **Motion** para las animaciones de las pantallas de ingreso.
+- **Vitest + Testing Library** para los tests.
+
+## Cómo levantarlo
+
+Requisitos: **Node 22.12 o superior** (el CI usa Node 24).
+
+1. Instalá las dependencias:
+
+   ```sh
+   npm ci
+   ```
+
+2. Activá el control de credenciales antes de cada commit (se hace una sola vez por clon):
+
+   ```sh
+   git config core.hooksPath .githooks
+   ```
+
+3. Copiá `.env.example` a `.env.local` y ajustá `VITE_API_BASE_URL` si tu backend usa otra dirección. Fuera de `localhost`, la API tiene que usar HTTPS.
+
+4. Iniciá el servidor de desarrollo y abrí `http://localhost:5173`:
+
+   ```sh
+   npm run dev
+   ```
+
+Para que el login funcione con el backend real, la API tiene que permitir el origen `http://localhost:5173` en `Frontend:AllowedOrigins`, y su certificado HTTPS tiene que ser de confianza (`dotnet dev-certs https --trust`).
+
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo en `http://localhost:5173`. |
+| `npm test` | Corre todos los tests una vez. |
+| `npm run build` | Genera la versión de producción en `dist/`. |
+| `npm run preview` | Sirve la versión de producción para probarla. |
+| `npm run check:credentials` | Revisa que los cambios preparados para commit no tengan claves ni archivos sensibles. |
+
+## Pantallas
+
+| Ruta | Pantalla | Acceso |
+|---|---|---|
+| `/login` | Inicio de sesión | Pública |
+| `/registro` | Registro en 6 pasos: datos, correo, código, contraseña, DNI y validación facial | Pública |
+| `/recuperar` | Recuperación de contraseña | Pública |
+| `/dashboard` | Inicio: saldo, accesos rápidos, tarjeta, datos de la cuenta y últimos movimientos | Con sesión |
+| `/movimientos` | Historial con filtros, resumen del período y comprobante | Con sesión |
+| `/transferir` | Transferencia guiada en 4 pasos | Con sesión |
+| `/cargar` | Carga de saldo | Con sesión |
+| `/pagar` | Pago con QR | Con sesión |
+| `/tarjeta` | Tarjeta virtual y pedido de tarjeta física | Con sesión |
+| `/sandbox` | Pantalla de pruebas de carga real con Mercado Pago sandbox | Con sesión |
+
+Si entrás a una pantalla con sesión sin haber iniciado sesión, la app te lleva al login y, después de ingresar, te devuelve a la pantalla que pediste. Mercado Pago vuelve a `/payments/return`, que redirige a `/sandbox`.
+
+## Datos reales y simulados
+
+Las pantallas se construyen primero con **datos simulados** y se conectan al backend al final (tarea FE-INT-01), según las reglas del proyecto.
+
+- **Con el backend real:** el inicio de sesión y la pantalla `/sandbox`.
+- **Simulados:** el registro, el inicio, los movimientos, las transferencias, la carga, el pago con QR y la tarjeta. Los datos de prueba están en `src/services/mocks/` y el estado en `src/store/`. Las transferencias simuladas respetan la clave de idempotencia, igual que el backend.
+- **Pendiente:** si el backend no responde, el inicio de sesión crea una sesión de prueba con cualquier correo. Sirve para mostrar la app sin backend, pero hay que quitarlo antes de la entrega final.
+
+## Estructura
+
+```text
+src/
+├── pages/            Una pantalla por ruta
+├── components/
+│   ├── auth/         Login, registro, recuperación y su diseño
+│   ├── common/       Avisos, banner de conexión, pantalla de error, botón de tema
+│   ├── dashboard/    Piezas del inicio
+│   ├── movements/    Historial y comprobante
+│   ├── transfer/     Pasos de la transferencia
+│   ├── routing/      Guardias de rutas
+│   ├── layout/       Estructura con menú lateral y barra inferior
+│   ├── forms/        Campos y estilos compartidos de formularios
+│   └── ui/           Componentes base (shadcn/ui)
+├── services/
+│   ├── api.js        Cliente HTTP: token, errores del backend y reintentos
+│   └── mocks/        Datos y operaciones simuladas
+├── store/            Estado global con Zustand
+├── lib/              Funciones puras: formatos, dinero, movimientos y rutas
+└── AppRoutes.jsx     Todas las rutas de la app
+docs/
+├── frontend-tasks.md Plan de tareas con el detalle de cada pantalla
+└── ai-guidelines.md  Reglas de diseño y de código del proyecto
 ```
 
-Copio `.env.example` a `.env.local` y ajusto VITE_API_BASE_URL si mi API usa otra URL. La API necesita permitir mi origen exacto en Frontend:AllowedOrigins; para Vite local uso `http://localhost:5173`. Primero confío el certificado HTTPS del backend con `dotnet dev-certs https --trust` cuando mi plataforma lo permite.
+## Seguridad
 
-```sh
-npm run dev
-```
+- **Sesión solo en memoria:** el token nunca se guarda en el navegador, así que al recargar la página hay que volver a iniciar sesión.
+- **Errores en un solo lugar:** `src/services/api.js` agrega el token a cada pedido y maneja los errores del backend. Ante un 401 cierra la sesión, ante un 403 muestra un aviso, y ante un error del servidor o sin conexión muestra un banner con "Reintentar".
+- **Nada de claves en el repo:** no van claves de Mercado Pago en variables `VITE_*`, en el navegador ni en Git. El control de credenciales del paso 2 bloquea los commits que las incluyan.
+- **Cargas con Mercado Pago (`/sandbox`):**
+  - Solo se abren enlaces HTTPS del checkout sandbox.
+  - En `sessionStorage` se guarda únicamente la clave, el importe y el identificador de la carga, para poder recuperarla si se pierde una respuesta.
+  - El regreso desde Mercado Pago no confirma el pago: el saldo se acredita recién cuando el backend lo verifica.
 
-Abro `http://localhost:5173`. Creo una cuenta o ingreso con una existente, creo mi billetera si falta y preparo una carga. Abro el checkout de prueba en otra pestaña y regreso para consultar el resultado. Nunca interpreto los parámetros de retorno del navegador como confirmación del pago.
-
-Para habilitar el checkout necesito configurar la aplicación sandbox, el vendedor de prueba, el secreto de Webhooks y una URL HTTPS pública en el backend. Consulto su README para esa configuración. Mientras Payments:Enabled sea false, puedo usar identidad y billetera y veo que las cargas todavía no están disponibles.
-
-## Seguridad y reintentos
-
-Mantengo el JWT únicamente en memoria y vuelvo a iniciar sesión después de recargar. No guardo credenciales de Mercado Pago en variables VITE_*, en almacenamiento del navegador ni en Git.
-
-Conservo en sessionStorage únicamente la clave, el importe y el identificador de la carga, separados por usuario. Si pierdo una respuesta recupero la misma intención con su clave. Para realizar otra operación uso Iniciar otra carga. Tras una aprobación confirmada por el backend, actualizo saldo e historial desde la API.
-
-Sólo abro enlaces HTTPS del checkout sandbox de Mercado Pago. No capturo números de tarjeta ni CVV en formularios propios. Si una operación necesita revisión, conservo su referencia y evito volver a pagar sin verificarla.
-
-## Verificación
+## Tests
 
 ```sh
 npm test
-npm run build
 ```
 
-Pruebo importes, enlaces seguros, conservación de claves, respuesta perdida, recuperación tras recarga y actualización del saldo después de la aprobación. Estas pruebas usan respuestas controladas de la API; completo por separado el recorrido real frontend → backend → SQL → Mercado Pago sandbox antes de declarar terminado el incremento.
+- Los tests fijan la zona horaria de Argentina para que las fechas den igual en cualquier máquina y en el CI.
+- El CI de GitHub corre `npm ci`, `npm test` y `npm run build` en cada push y en cada pull request a `dev`, `develop` y `main`.
 
-Para desplegar la SPA configuro el servidor estático para devolver index.html en las rutas de navegación. No habilito dinero real con esta configuración.
+## Cómo trabajar
+
+- **Ramas:** cada tarea va en su rama, que sale de `dev` y se llama `feature/<TAREA>-<descripcion>` (por ejemplo, `feature/US-FE-05-transfers`). Se integra a `dev` con un pull request.
+- **Commits:** en español con [Conventional Commits](https://www.conventionalcommits.org/es/) (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`).
+- **Reglas del código:**
+  - Nombres de archivos, carpetas y variables en inglés; todos los textos que ve el usuario en español de Argentina.
+  - Sin comentarios en el código y sin emojis.
+  - Montos, fechas, CVU y alias siempre con `font-mono`.
+  - El detalle completo está en [`docs/ai-guidelines.md`](docs/ai-guidelines.md).
+- **Qué falta hacer:** está en [`docs/frontend-tasks.md`](docs/frontend-tasks.md).
+- **Despliegue:** el servidor estático tiene que devolver `index.html` en todas las rutas de navegación, para que funcionen al recargar.
