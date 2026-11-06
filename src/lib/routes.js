@@ -7,6 +7,7 @@ export const routes = {
   card: '/tarjeta',
   sandbox: '/sandbox',
   paymentReturn: '/payments/return',
+  checkout: '/checkout',
   login: '/login',
   register: '/registro',
   forgotPassword: '/recuperar',
