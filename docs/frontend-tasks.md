@@ -70,19 +70,6 @@ Para evitar que las vistas resulten desiertas o con aspecto de maqueta prelimina
 
 ---
 
-<<<<<<< HEAD
-## 3. Billetera y Operaciones (Incremento 2)
-- **`US-FE-03` Dashboard   Principal (Inspirado en Mockups)**:
-  - Vista `/dashboard`:
-    - **Tarjeta Hero de Saldo**: Tarjeta con gradiente irisado/mesh (de cálido dorado a lavanda suave) en modo oscuro con texto de alto contraste, o tarjeta oscura con resplandor violeta y cifra en pesos argentinos (`font-mono`).
-    - **Pares de Acciones Rápidas en Píldora**: Botón de recarga/ingreso en píldora sólida y botón de transferencia/retiro en píldora contorno (`Deposit` / `Withdraw`).
-    - **Visualización de Tarjeta Virtual**: Tarjeta apilada con gradiente violeta, chip y numeración en `font-mono`.
-    - **Datos de cuenta**: CVU/Alias con botón táctil para copiar al portapapeles.
-- **`US-FE-04` Historial de Movimientos**:
-  - Vista `/movimientos`: Filas de transacciones redondeadas de alta legibilidad inspiradas en los mockups, con badges semánticos (verde esmeralda para ingresos, violeta/rojo para egresos), filtros por tipo y modal con comprobante.
-- **`US-FE-05` Envío de Transferencias**:
-  - Vista `/transferir`: Flujo guiado con selector de destinatario, validación de saldo disponible e idempotencia simulada con confirmación en modal.
-=======
 ### Incremento 1 — Identidad y Seguridad
 
 #### `US-FE-01`: Formulario de Registro con Validaciones, Onboarding y Feedback Visual
@@ -158,7 +145,6 @@ Para evitar que las vistas resulten desiertas o con aspecto de maqueta prelimina
     - Tratamiento de `422 Unprocessable Entity`: Formatea y transmite los errores de validación a los formularios activos.
     - Tratamiento de `500 / 503 / Offline`: Dispara un banner flotante superior indicando problemas de red o mantenimiento del servidor con botón de reintento.
   - **Sistema de Feedback Visual**: Notificaciones flotantes tipo Toast (usando componentes Radix/shadcn) con temporizador automático y botón de cierre.
->>>>>>> feature/US-FE-01-register-form
 
 ---
 

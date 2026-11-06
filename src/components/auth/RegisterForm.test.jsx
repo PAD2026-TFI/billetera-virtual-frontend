@@ -3,65 +3,63 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import RegisterForm from './RegisterForm.jsx';
 
-async function fill(user, overrides = {}) {
-  const v = { firstName: 'Ana', lastName: 'Pérez', email: 'ana@test.com', password: 'claveSegura123', confirm: 'claveSegura123', ...overrides };
-  await user.type(screen.getByLabelText('Nombre'), v.firstName);
-  await user.type(screen.getByLabelText('Apellido'), v.lastName);
-  await user.type(screen.getByLabelText('Correo electrónico'), v.email);
-  await user.type(screen.getByLabelText('Contraseña'), v.password);
-  await user.type(screen.getByLabelText('Repetir contraseña'), v.confirm);
-}
-
-const submit = user => user.click(screen.getByRole('button', { name: 'Crear cuenta' }));
-
 afterEach(() => vi.restoreAllMocks());
 
 describe('RegisterForm', () => {
-  it('muestra los errores si se envía vacío', async () => {
+  it('muestra los errores debajo de los inputs si se envía vacío en el paso 1', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
-    await submit(user);
+
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
     expect(await screen.findByText('Ingresá tu nombre.')).toBeInTheDocument();
-    expect(screen.getByText('Mínimo 12 caracteres.')).toBeInTheDocument();
+    expect(screen.getByText('Ingresá tu apellido.')).toBeInTheDocument();
+    expect(screen.getByText('Ingresá tu DNI.')).toBeInTheDocument();
   });
 
-  it('avisa si las contraseñas no coinciden', async () => {
+  it('valida el formato de DNI en el paso 1', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
-    await fill(user, { confirm: 'otraClave12345' });
-    await submit(user);
-    expect(await screen.findByText('Las contraseñas no coinciden.')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Nombre'), 'Ana');
+    await user.type(screen.getByLabelText('Apellido'), 'Pérez');
+    await user.type(screen.getByLabelText('DNI'), '123');
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(await screen.findByText('Ingresá un DNI válido (7 u 8 números).')).toBeInTheDocument();
   });
 
-  it('envía los datos sin la confirmación y avisa al terminar', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ id: '1', firstName: 'Ana', lastName: 'Pérez', email: 'ana@test.com' }), { status: 201 }));
-    const onRegistered = vi.fn();
-    const user = userEvent.setup();
-    render(<RegisterForm onRegistered={onRegistered} />);
-    await fill(user);
-    await submit(user);
-    await vi.waitFor(() => expect(onRegistered).toHaveBeenCalled());
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body))
-      .toEqual({ firstName: 'Ana', lastName: 'Pérez', email: 'ana@test.com', password: 'claveSegura123' });
-  });
-
-  it('muestra el error del backend si el correo ya existe', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ code: 'EMAIL_ALREADY_REGISTERED' }), { status: 409 }));
+  it('avanza al paso 2 y muestra error si el correo es inválido', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
-    await fill(user);
-    await submit(user);
-    expect(await screen.findByText('Ese correo ya tiene una cuenta.')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Nombre'), 'Ana');
+    await user.type(screen.getByLabelText('Apellido'), 'Pérez');
+    await user.type(screen.getByLabelText('DNI'), '40123456');
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(await screen.findByRole('heading', { name: 'Tu correo electrónico' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Enviar código' }));
+    expect(await screen.findByText('Ingresá tu correo electrónico.')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Correo electrónico'), 'correo-invalido');
+    await user.click(screen.getByRole('button', { name: 'Enviar código' }));
+    expect(await screen.findByText('Ingresá un correo electrónico válido.')).toBeInTheDocument();
   });
 
-  it('permite mostrar la contraseña', async () => {
+  it('permite regresar al paso 1 desde el paso 2', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
-    const input = screen.getByLabelText('Contraseña');
-    expect(input).toHaveAttribute('type', 'password');
-    await user.click(screen.getAllByRole('button', { name: 'Mostrar contraseña' })[0]);
-    expect(input).toHaveAttribute('type', 'text');
+
+    await user.type(screen.getByLabelText('Nombre'), 'Ana');
+    await user.type(screen.getByLabelText('Apellido'), 'Pérez');
+    await user.type(screen.getByLabelText('DNI'), '40123456');
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    const backBtn = await screen.findByRole('button', { name: 'Volver a datos personales' });
+    await user.click(backBtn);
+
+    expect(await screen.findByRole('heading', { name: 'Crear cuenta' })).toBeInTheDocument();
   });
 });

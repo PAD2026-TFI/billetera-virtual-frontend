@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import { useAuthStore } from './store/useAuthStore.js';
 
 if (typeof window !== 'undefined' && !window.matchMedia) {
   Object.defineProperty(window, 'matchMedia', {
@@ -21,4 +22,6 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
 afterEach(() => {
   cleanup();
   sessionStorage.clear();
+  useAuthStore.getState().logout();
+  window.history.replaceState({}, '', '/');
 });

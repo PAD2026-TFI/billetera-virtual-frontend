@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import { motion } from 'motion/react';
 import coinImg from '../../assets/coin.webp';
 import '@fontsource/poppins/400.css';
@@ -45,7 +46,7 @@ export default function AuthLayout({ children }) {
             <div className="hidden lg:mb-3 lg:block">
               <Wordmark />
             </div>
-            {children}
+            {children || <Outlet />}
           </div>
           <p className="mt-2 mb-0 text-center text-[11px] text-[#ABA6C2]">
             Entorno de pruebas · sin dinero real
