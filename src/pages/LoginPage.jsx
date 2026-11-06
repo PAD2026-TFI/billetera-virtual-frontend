@@ -1,34 +1,33 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import LoginForm from '@/components/auth/LoginForm.jsx';
-import { useAuthStore } from '@/store/useAuthStore.js';
+import LoginForm from '@/components/auth/LoginForm';
+import { routes } from '@/lib/routes';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function LoginPage() {
-  const navigate = useNavigate();
   const signIn = useAuthStore(state => state.signIn);
-  const busy = useAuthStore(state => state.busy);
-  const error = useAuthStore(state => state.error);
-  const setError = useAuthStore(state => state.setError);
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
-  async function handleLogin(credentials) {
-    const success = await signIn(credentials);
-    if (success) {
-      navigate('/', { replace: true });
+  async function submit(credentials) {
+    setBusy(true);
+    setError('');
+    try {
+      await signIn(credentials);
+    } catch (e) {
+      setError(e.message);
+      setBusy(false);
     }
   }
 
   return (
     <LoginForm
-      onSubmit={handleLogin}
+      onSubmit={submit}
       busy={busy}
       error={error}
-      onCreateAccount={() => {
-        setError('');
-        navigate('/register');
-      }}
-      onForgotPassword={() => {
-        setError('');
-        navigate('/forgot-password');
-      }}
+      onCreateAccount={() => navigate(routes.register)}
+      onForgotPassword={() => navigate(routes.forgotPassword)}
     />
   );
 }
