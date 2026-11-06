@@ -1,65 +1,105 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import RegisterForm from './RegisterForm.jsx';
 
-afterEach(() => vi.restoreAllMocks());
+const slow = { timeout: 4000 };
+
+async function completePersonalData(user, { firstName = 'Ana', lastName = 'Pérez', dni = '40123456' } = {}) {
+  await user.type(screen.getByLabelText('Nombre'), firstName);
+  await user.type(screen.getByLabelText('Apellido'), lastName);
+  await user.type(screen.getByLabelText('DNI'), dni);
+  await user.click(screen.getByRole('button', { name: 'Continuar' }));
+}
+
+async function verifyEmail(user, email = 'ana@test.com') {
+  await user.type(await screen.findByLabelText('Correo electrónico'), email);
+  await user.click(screen.getByRole('button', { name: 'Enviar código' }));
+  await screen.findByRole('heading', { name: 'Ingresá el código' });
+  await vi.waitFor(() => expect(screen.getAllByRole('textbox')[0]).toHaveFocus());
+  await user.keyboard('123456');
+  expect(await screen.findByText('Código verificado correctamente', {}, slow)).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Continuar a contraseña' }));
+}
+
+async function createPassword(user, password = 'ClaveSegura1') {
+  await user.type(await screen.findByLabelText('Contraseña'), password);
+  await user.type(screen.getByLabelText('Repetir contraseña'), password);
+  await user.click(screen.getByRole('button', { name: 'Continuar a validación de DNI' }));
+}
 
 describe('RegisterForm', () => {
-  it('muestra los errores debajo de los inputs si se envía vacío en el paso 1', async () => {
+  it('pide nombre, apellido y un DNI de 7 u 8 números', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
-
     await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect(screen.getByText('Ingresá tu nombre.')).toBeInTheDocument();
 
-    expect(await screen.findByText('Ingresá tu nombre.')).toBeInTheDocument();
-    expect(screen.getByText('Ingresá tu apellido.')).toBeInTheDocument();
-    expect(screen.getByText('Ingresá tu DNI.')).toBeInTheDocument();
+    await completePersonalData(user, { dni: '12ab3' });
+    expect(screen.getByLabelText('DNI')).toHaveValue('123');
+    expect(screen.getByText('Ingresá un DNI válido (7 u 8 números).')).toBeInTheDocument();
   });
 
-  it('valida el formato de DNI en el paso 1', async () => {
+  it('valida el correo y verifica el código de 6 dígitos', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
-
-    await user.type(screen.getByLabelText('Nombre'), 'Ana');
-    await user.type(screen.getByLabelText('Apellido'), 'Pérez');
-    await user.type(screen.getByLabelText('DNI'), '123');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
-
-    expect(await screen.findByText('Ingresá un DNI válido (7 u 8 números).')).toBeInTheDocument();
-  });
-
-  it('avanza al paso 2 y muestra error si el correo es inválido', async () => {
-    const user = userEvent.setup();
-    render(<RegisterForm />);
-
-    await user.type(screen.getByLabelText('Nombre'), 'Ana');
-    await user.type(screen.getByLabelText('Apellido'), 'Pérez');
-    await user.type(screen.getByLabelText('DNI'), '40123456');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
-
-    expect(await screen.findByRole('heading', { name: 'Tu correo electrónico' })).toBeInTheDocument();
-
+    await completePersonalData(user);
+    await user.type(await screen.findByLabelText('Correo electrónico'), 'correo-sin-arroba');
     await user.click(screen.getByRole('button', { name: 'Enviar código' }));
-    expect(await screen.findByText('Ingresá tu correo electrónico.')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Ingresá un correo electrónico válido.');
 
-    await user.type(screen.getByLabelText('Correo electrónico'), 'correo-invalido');
-    await user.click(screen.getByRole('button', { name: 'Enviar código' }));
-    expect(await screen.findByText('Ingresá un correo electrónico válido.')).toBeInTheDocument();
+    await user.clear(screen.getByLabelText('Correo electrónico'));
+    await verifyEmail(user);
+    expect(await screen.findByRole('heading', { name: 'Creá tu contraseña' })).toBeInTheDocument();
   });
 
-  it('permite regresar al paso 1 desde el paso 2', async () => {
+  it('exige una contraseña segura que coincida y permite mostrarla', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
+    await completePersonalData(user);
+    await verifyEmail(user);
 
-    await user.type(screen.getByLabelText('Nombre'), 'Ana');
-    await user.type(screen.getByLabelText('Apellido'), 'Pérez');
-    await user.type(screen.getByLabelText('DNI'), '40123456');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    const password = await screen.findByLabelText('Contraseña');
+    const submit = screen.getByRole('button', { name: 'Continuar a validación de DNI' });
+    await user.type(password, 'debil');
+    expect(submit).toBeDisabled();
 
-    const backBtn = await screen.findByRole('button', { name: 'Volver a datos personales' });
-    await user.click(backBtn);
+    await user.clear(password);
+    await user.type(password, 'ClaveSegura1');
+    await user.type(screen.getByLabelText('Repetir contraseña'), 'OtraClave1');
+    expect(screen.getByText('Las contraseñas no coinciden.')).toBeInTheDocument();
+    expect(submit).toBeDisabled();
 
-    expect(await screen.findByRole('heading', { name: 'Crear cuenta' })).toBeInTheDocument();
+    await user.clear(screen.getByLabelText('Repetir contraseña'));
+    await user.type(screen.getByLabelText('Repetir contraseña'), 'ClaveSegura1');
+    expect(submit).toBeEnabled();
+
+    expect(password).toHaveAttribute('type', 'password');
+    await user.click(screen.getAllByRole('button', { name: 'Mostrar contraseña' })[0]);
+    expect(password).toHaveAttribute('type', 'text');
+  });
+
+  it('completa la validación de DNI y facial y entrega las credenciales al terminar', async () => {
+    const onRegistered = vi.fn();
+    const user = userEvent.setup();
+    render(<RegisterForm onRegistered={onRegistered} />);
+    await completePersonalData(user);
+    await verifyEmail(user);
+    await createPassword(user);
+
+    await user.click(await screen.findByRole('button', { name: 'Capturar frente del DNI' }));
+    await user.click(await screen.findByRole('button', { name: 'Capturar dorso del DNI' }, slow));
+    await user.click(await screen.findByRole('button', { name: 'Continuar a validación facial' }, slow));
+
+    await user.click(await screen.findByRole('button', { name: 'Iniciar escaneo facial' }));
+    await user.click(await screen.findByRole('button', { name: 'Finalizar registro' }, slow));
+
+    const welcome = await screen.findByRole('dialog', {}, slow);
+    expect(within(welcome).getByRole('heading', { name: '¡Bienvenido a padi!' })).toBeInTheDocument();
+    await user.click(within(welcome).getByRole('button', { name: 'Comenzar a operar' }));
+    await vi.waitFor(() => expect(onRegistered).toHaveBeenCalledWith(
+      expect.objectContaining({ firstName: 'Ana', lastName: 'Pérez', email: 'ana@test.com', dni: '40123456' }),
+      { email: 'ana@test.com', password: 'ClaveSegura1' },
+    ));
   });
 });
