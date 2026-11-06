@@ -17,6 +17,7 @@ export function greetingFor(date = new Date()) {
 }
 
 function DashboardHeader({ summary }) {
+  const navigate = useNavigate();
   const fullName = `${summary.holder.firstName} ${summary.holder.lastName}`;
   return (
     <header className="flex items-center justify-between gap-4">
@@ -34,12 +35,14 @@ function DashboardHeader({ summary }) {
           <p className="m-0 text-sm font-semibold text-white">{fullName}</p>
           <p className="m-0 text-xs text-white/70">Cuenta personal</p>
         </div>
-        <span
-          aria-hidden="true"
-          className="grid size-12 place-items-center rounded-full border-2 border-white bg-[#4C1DB8] text-sm font-semibold text-white shadow-[0_8px_16px_-8px_rgba(76,29,184,0.7)] lg:border-white/40 lg:bg-[#FFD54A] lg:text-[#2A0E7A] dark:border-[#090613] lg:dark:border-white/30"
+        <button
+          type="button"
+          onClick={() => navigate(routes.profile)}
+          aria-label="Ver mi perfil"
+          className="m-0 grid size-12 p-0 place-items-center rounded-full border-2 border-white bg-[#4C1DB8] text-sm font-semibold text-white shadow-[0_8px_16px_-8px_rgba(76,29,184,0.7)] lg:border-white/40 lg:bg-[#FFD54A] lg:text-[#2A0E7A] dark:border-[#090613] lg:dark:border-white/30"
         >
-          {summary.holder.firstName[0]}{summary.holder.lastName[0]}
-        </span>
+          <span aria-hidden="true">{summary.holder.firstName[0]}{summary.holder.lastName[0]}</span>
+        </button>
       </div>
     </header>
   );

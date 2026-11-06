@@ -1,4 +1,4 @@
-import { ArrowLeftRight, CreditCard, Home, ListOrdered, LogOut, Moon, Plus, QrCode, Sun } from 'lucide-react';
+import { ArrowLeftRight, CreditCard, Home, ListOrdered, LogOut, Moon, Plus, QrCode, Sun, UserRound } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Wordmark } from '@/components/auth/AuthLayout';
 import { routes, sectionFromPath } from '@/lib/routes';
@@ -13,7 +13,10 @@ const sections = [
     { id: 'topUp', label: 'Cargar saldo', icon: Plus },
     { id: 'pay', label: 'Pagar con QR', icon: QrCode },
   ],
-  [{ id: 'card', label: 'Mi tarjeta', icon: CreditCard }],
+  [
+    { id: 'card', label: 'Mi tarjeta', icon: CreditCard },
+    { id: 'profile', label: 'Mi perfil', icon: UserRound },
+  ],
 ];
 
 export default function Sidebar() {

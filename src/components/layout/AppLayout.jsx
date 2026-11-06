@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import BottomNav from '@/components/layout/BottomNav';
 import ThemeToggle from '@/components/common/ThemeToggle';
+import ProfileButton from '@/components/common/ProfileButton';
 import { useWalletStore } from '@/store/useWalletStore';
 
 const bandStripes = [
@@ -67,14 +68,17 @@ export default function AppLayout({ header, children }) {
   );
 }
 
-export function PageHeader({ title, subtitle }) {
+export function PageHeader({ title, subtitle, showProfile = true }) {
   return (
     <header className="flex items-center justify-between gap-4">
       <div>
         <h1 className="m-0 text-[28px] leading-tight font-bold tracking-tight lg:text-[32px] lg:text-white">{title}</h1>
         {subtitle && <p className="mt-1 mb-0 text-sm text-[#4A4560] lg:text-white/75 dark:text-[#9D97B5] lg:dark:text-white/75">{subtitle}</p>}
       </div>
-      <ThemeToggle className="lg:hidden" />
+      <div className="flex gap-2 lg:hidden">
+        <ThemeToggle />
+        {showProfile && <ProfileButton />}
+      </div>
     </header>
   );
 }
