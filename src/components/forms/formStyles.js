@@ -17,3 +17,8 @@ export const secondaryActionClass =
 export const alertClass = 'm-0 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-rose-950/40 dark:text-rose-300';
 
 export const sectionTitleClass = 'm-0 text-lg font-semibold text-[#1C1633] dark:text-[#F4F2FA]';
+
+export const tabListClass = 'flex gap-1 rounded-full bg-[#F3F1F9] p-1 dark:bg-[#1E1735]';
+
+export const tabTriggerClass =
+  'm-0 h-10 flex-1 rounded-full border-0 bg-transparent px-3 text-sm font-semibold text-[#4A4560] data-[state=active]:bg-white data-[state=active]:text-[#4C1DB8] data-[state=active]:shadow-sm dark:text-[#9D97B5] dark:data-[state=active]:bg-[#281F45] dark:data-[state=active]:text-[#F4F2FA]';

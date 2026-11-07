@@ -12,6 +12,7 @@ import PayPage from '@/pages/PayPage';
 import CardPage from '@/pages/CardPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SandboxPage from '@/pages/SandboxPage';
+import CheckoutPage from '@/pages/CheckoutPage';
 import { routes } from '@/lib/routes';
 
 export default function AppRoutes() {
@@ -35,6 +36,7 @@ export default function AppRoutes() {
         <Route path={routes.sandbox} element={<SandboxPage />} />
         <Route path={routes.paymentReturn} element={<Navigate to={routes.sandbox} replace />} />
       </Route>
+      <Route path={routes.checkout} element={<CheckoutPage />} />
       <Route path="*" element={<Navigate to={routes.home} replace />} />
     </Routes>
   );

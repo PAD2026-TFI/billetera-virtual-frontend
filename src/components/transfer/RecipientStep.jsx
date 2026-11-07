@@ -6,7 +6,7 @@ import { Tabs } from 'radix-ui';
 import { AtSign, Loader2, UserRound } from 'lucide-react';
 import { IconInput } from '@/components/auth/IconInput';
 import Field from '@/components/forms/Field';
-import { alertClass, fieldInputClass, primaryActionClass, secondaryActionClass } from '@/components/forms/formStyles';
+import { alertClass, fieldInputClass, primaryActionClass, secondaryActionClass, tabListClass, tabTriggerClass } from '@/components/forms/formStyles';
 import { frequentContacts, lookupRecipient } from '@/services/mocks/walletService';
 import RecipientCard from './RecipientCard';
 
@@ -17,9 +17,6 @@ const destinationSchema = z.object({
     .min(1, 'Ingresá un alias, CVU o CBU.')
     .refine(value => /^\d{22}$/.test(value) || /^[a-zA-Z0-9.-]{6,20}$/.test(value), 'El alias tiene de 6 a 20 caracteres; el CVU y el CBU, 22 números.'),
 });
-
-const tabClass =
-  'm-0 h-10 flex-1 rounded-full border-0 bg-transparent px-3 text-sm font-semibold text-[#4A4560] data-[state=active]:bg-white data-[state=active]:text-[#4C1DB8] data-[state=active]:shadow-sm dark:text-[#9D97B5] dark:data-[state=active]:bg-[#281F45] dark:data-[state=active]:text-[#F4F2FA]';
 
 export default function RecipientStep({ account, onConfirm }) {
   const [recipient, setRecipient] = useState(null);
@@ -45,9 +42,9 @@ export default function RecipientStep({ account, onConfirm }) {
   return (
     <div className="grid gap-5">
       <Tabs.Root defaultValue="frequent" onValueChange={() => { setRecipient(null); setError(''); }} className="grid gap-4">
-        <Tabs.List aria-label="Elegí el destinatario" className="flex gap-1 rounded-full bg-[#F3F1F9] p-1 dark:bg-[#1E1735]">
-          <Tabs.Trigger value="frequent" className={tabClass}>Contactos frecuentes</Tabs.Trigger>
-          <Tabs.Trigger value="new" className={tabClass}>Nuevo destinatario</Tabs.Trigger>
+        <Tabs.List aria-label="Elegí el destinatario" className={tabListClass}>
+          <Tabs.Trigger value="frequent" className={tabTriggerClass}>Contactos frecuentes</Tabs.Trigger>
+          <Tabs.Trigger value="new" className={tabTriggerClass}>Nuevo destinatario</Tabs.Trigger>
         </Tabs.List>
 
         <Tabs.Content value="frequent">

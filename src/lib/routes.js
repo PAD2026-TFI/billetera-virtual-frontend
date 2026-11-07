@@ -8,6 +8,7 @@ export const routes = {
   profile: '/perfil',
   sandbox: '/sandbox',
   paymentReturn: '/payments/return',
+  checkout: '/checkout',
   login: '/login',
   register: '/registro',
   forgotPassword: '/recuperar',
