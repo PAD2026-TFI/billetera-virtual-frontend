@@ -48,6 +48,20 @@ describe('Mi perfil', () => {
     expect(useAuthStore.getState().session).toBeNull();
     expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument();
   });
+
+  it('permite activar modalidad vendedor y navegar a cobros', async () => {
+    const user = userEvent.setup();
+    renderAt('/perfil');
+    const activateButton = await screen.findByRole('button', { name: 'Activar Vendedor' });
+    await user.click(activateButton);
+
+    expect(await screen.findByRole('button', { name: 'Pasar a Personal' })).toBeInTheDocument();
+    const goToCollections = screen.getByRole('button', { name: /ir a cobros/i });
+    expect(goToCollections).toBeInTheDocument();
+
+    await user.click(goToCollections);
+    expect(await screen.findByRole('heading', { name: 'Cobros y Ventas' })).toBeInTheDocument();
+  });
 });
 
 describe('accesos al perfil', () => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Info, ShieldCheck, Wifi, Zap } from 'lucide-react';
+import { ArrowRight, Info, ShieldCheck, Store, Wifi, Zap } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import coinImg from '../../assets/coin.webp';
@@ -11,9 +11,11 @@ export default function RegisterSuccessModal({
   open,
   firstName,
   lastName,
+  accountType = 'personal',
   onContinue,
 }) {
   const [isClosing, setIsClosing] = useState(false);
+  const isMerchant = accountType === 'merchant';
 
   function handleContinue() {
     setIsClosing(true);
@@ -76,30 +78,36 @@ export default function RegisterSuccessModal({
               </div>
               <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
                 <span className="size-1.5 rounded-full bg-emerald-400" />
-                Cuenta activa
+                {isMerchant ? 'Comercio activo' : 'Cuenta activa'}
               </div>
             </div>
           </motion.div>
 
           <h2 className="m-0 text-[22px] font-bold tracking-tight text-[#2A0E7A] dark:text-[#F4F2FA] lg:text-[24px]">
-            ¡Bienvenido a padi!
+            {isMerchant ? '¡Tu comercio está listo!' : '¡Bienvenido a padi!'}
           </h2>
           <p className="mt-1.5 mb-3.5 text-[13.5px] leading-relaxed text-[#4A4560] dark:text-[#9D97B5]">
             Hola{' '}
             <strong className="font-semibold text-[#1C1633] dark:text-white">
               {firstName}
             </strong>
-            , tu billetera virtual ya está habilitada para enviar, recibir y transferir dinero.
+            {isMerchant
+              ? ', tu cuenta de vendedor ya está habilitada para cobrar con QR, crear links de pago y recibir cobros inmediatos.'
+              : ', tu billetera virtual ya está habilitada para enviar, recibir y transferir dinero.'}
           </p>
 
           <div className="mb-3 grid grid-cols-2 gap-2 text-left">
             <div className="rounded-xl bg-[#F3F1F9] p-2.5 dark:bg-[#1E1735]">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[#2A0E7A] dark:text-[#C4B2FF]">
-                <Zap className="size-3.5 text-[#5B2EE0] dark:text-[#FFD54A]" />
-                Transferencias
+                {isMerchant ? (
+                  <Store className="size-3.5 text-[#5B2EE0] dark:text-[#FFD54A]" />
+                ) : (
+                  <Zap className="size-3.5 text-[#5B2EE0] dark:text-[#FFD54A]" />
+                )}
+                {isMerchant ? 'Cobros y QR' : 'Transferencias'}
               </div>
               <p className="mt-0.5 mb-0 text-[11px] text-[#8C87A3] dark:text-[#6B6485]">
-                Inmediatas y sin costo
+                {isMerchant ? 'Links y QR activos' : 'Inmediatas y sin costo'}
               </p>
             </div>
 
@@ -129,7 +137,7 @@ export default function RegisterSuccessModal({
             onClick={handleContinue}
             className={`${primaryButtonClass} h-11 text-[15px] dark:bg-[#5B2EE0] dark:hover:bg-[#6C3BF4]`}
           >
-            Comenzar a operar
+            {isMerchant ? 'Ir a cobrar' : 'Comenzar a operar'}
             <ArrowRight className="size-4" />
           </Button>
         </motion.div>

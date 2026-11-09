@@ -4,19 +4,29 @@ import { api } from "@/services/api";
 import { routes } from "@/lib/routes";
 
 const SESSION_STORAGE_KEY = 'padi_session';
+const ACTIVE_ACCOUNT_TYPE_KEY = 'padi_account_type_active';
 
 export const isMerchantUser = user => {
   if (!user) return false;
   if (user.accountType === 'merchant') return true;
   if (typeof window === 'undefined') return false;
-  const byId = user.id ? localStorage.getItem(`padi_account_type_${user.id}`) : null;
-  const byEmail = user.email ? localStorage.getItem(`padi_account_type_${user.email.toLowerCase()}`) : null;
-  return byId === 'merchant' || byEmail === 'merchant';
+  const idKey = user.id ? String(user.id).trim().toLowerCase() : null;
+  const emailKey = user.email ? String(user.email).trim().toLowerCase() : null;
+  const byId = idKey ? localStorage.getItem(`padi_account_type_${idKey}`) : null;
+  const byEmail = emailKey ? localStorage.getItem(`padi_account_type_${emailKey}`) : null;
+  const globalActive = localStorage.getItem(ACTIVE_ACCOUNT_TYPE_KEY);
+  return byId === 'merchant' || byEmail === 'merchant' || globalActive === 'merchant';
 };
 
 export const setStoredAccountType = (identifier, type) => {
-  if (typeof window === 'undefined' || !identifier) return;
-  localStorage.setItem(`padi_account_type_${identifier.toLowerCase()}`, type);
+  if (typeof window === 'undefined') return;
+  if (type === 'merchant') {
+    localStorage.setItem(ACTIVE_ACCOUNT_TYPE_KEY, 'merchant');
+  } else if (type === 'personal') {
+    localStorage.removeItem(ACTIVE_ACCOUNT_TYPE_KEY);
+  }
+  if (!identifier) return;
+  localStorage.setItem(`padi_account_type_${String(identifier).trim().toLowerCase()}`, type);
 };
 
 function readStoredSession() {
@@ -51,16 +61,28 @@ function persistSession(session) {
 export const useAuthStore = create((set, get) => ({
   session: readStoredSession(),
 
-  signIn: async (credentials) => {
+  signIn: async (credentials, explicitAccountType) => {
     try {
       const { accessToken, expiresIn } = await api("/api/v1/auth/login", {
         method: "POST",
         body: credentials,
       });
       const user = await api("/api/v1/me/profile", { token: accessToken });
-      const accountType = isMerchantUser(user) || (credentials?.email && isMerchantUser({ email: credentials.email }))
-        ? 'merchant'
-        : 'personal';
+      const emailKey = (credentials?.email || user?.email || '').trim().toLowerCase();
+      const isExplicitMerchant = explicitAccountType === 'merchant';
+      const isStoredMerchant =
+        isMerchantUser(user) ||
+        (emailKey && isMerchantUser({ email: emailKey })) ||
+        (user?.id && isMerchantUser({ id: user.id }));
+      const accountType = isExplicitMerchant || isStoredMerchant ? 'merchant' : 'personal';
+
+      if (accountType === 'merchant') {
+        setStoredAccountType(null, 'merchant');
+        if (user?.id) setStoredAccountType(user.id, 'merchant');
+        if (user?.email) setStoredAccountType(user.email, 'merchant');
+        if (emailKey) setStoredAccountType(emailKey, 'merchant');
+      }
+
       const session = {
         token: accessToken,
         user: { ...user, accountType },
@@ -70,9 +92,14 @@ export const useAuthStore = create((set, get) => ({
       set({ session });
     } catch (e) {
       if (e?.status || import.meta.env.MODE !== "test") throw e;
-      const email = credentials?.email || "usuario@padi.com";
+      const email = (credentials?.email || "usuario@padi.com").trim().toLowerCase();
       const name = email.split("@")[0] || "Usuario";
-      const accountType = isMerchantUser({ email }) ? 'merchant' : 'personal';
+      const isExplicitMerchant = explicitAccountType === 'merchant';
+      const accountType = isExplicitMerchant || isMerchantUser({ email }) ? 'merchant' : 'personal';
+      if (accountType === 'merchant') {
+        setStoredAccountType(null, 'merchant');
+        setStoredAccountType(email, 'merchant');
+      }
       const session = {
         token: "mock-jwt-token",
         user: {
@@ -91,6 +118,7 @@ export const useAuthStore = create((set, get) => ({
 
   setAccountType: (accountType) => {
     const { session } = get();
+    setStoredAccountType(null, accountType);
     if (!session?.user) return;
     if (session.user.id) setStoredAccountType(session.user.id, accountType);
     if (session.user.email) setStoredAccountType(session.user.email, accountType);
@@ -103,10 +131,16 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signOut: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(ACTIVE_ACCOUNT_TYPE_KEY);
+    }
     persistSession(null);
     set({ session: null });
   },
   logout: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(ACTIVE_ACCOUNT_TYPE_KEY);
+    }
     persistSession(null);
     set({ session: null });
   },

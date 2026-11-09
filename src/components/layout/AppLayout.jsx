@@ -27,9 +27,10 @@ const navIndexMap = {
   pay: 2,
   transfer: 3,
   card: 4,
-  topUp: 5,
-  profile: 6,
-  sandbox: 7,
+  collections: 5,
+  topUp: 6,
+  profile: 7,
+  sandbox: 8,
 };
 
 export const panelClass =

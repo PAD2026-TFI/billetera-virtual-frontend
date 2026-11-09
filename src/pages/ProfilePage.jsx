@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
+  ArrowRight,
   CheckCircle2,
   CreditCard,
   Eye,
@@ -10,18 +12,22 @@ import {
   Moon,
   ShieldCheck,
   Sparkles,
+  Store,
   Sun,
   UserRound,
 } from 'lucide-react';
 import AppLayout, { PageHeader, panelClass } from '@/components/layout/AppLayout';
 import AccountDetails from '@/components/dashboard/AccountDetails';
 import { sectionTitleClass } from '@/components/forms/formStyles';
+import { routes } from '@/lib/routes';
 import { isMerchantUser, useAuthStore, useSignOut } from '@/store/useAuthStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
 import { useThemeStore } from '@/store/useThemeStore';
 
 const profilePanelClass = `${panelClass} m-0 border-0 lg:dark:border-0`;
 
 function ProfileContent({ summary }) {
+  const navigate = useNavigate();
   const [showAccountDetails, setShowAccountDetails] = useState(false);
   const user = useAuthStore(state => state.session?.user);
   const setAccountType = useAuthStore(state => state.setAccountType);
@@ -145,7 +151,7 @@ function ProfileContent({ summary }) {
               ))}
             </dl>
 
-            <div className="mt-4 flex items-center justify-between border-t border-[#ECE9F5] pt-3 dark:border-[#261E3D]">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#ECE9F5] pt-3 dark:border-[#261E3D]">
               <div>
                 <p className="m-0 text-xs font-semibold text-[#1C1633] dark:text-white">
                   Modalidad Vendedor
@@ -156,13 +162,36 @@ function ProfileContent({ summary }) {
                     : 'Activá la sección de Cobros para generar links y QR.'}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setAccountType(isMerchant ? 'personal' : 'merchant')}
-                className="m-0 rounded-full border border-[#5B2EE0] px-3 py-1.5 text-xs font-semibold text-[#5B2EE0] transition-colors hover:bg-[#5B2EE0]/10 dark:border-[#FFD54A] dark:text-[#FFD54A] dark:hover:bg-[#FFD54A]/10"
-              >
-                {isMerchant ? 'Pasar a Personal' : 'Activar Vendedor'}
-              </button>
+              <div className="flex items-center gap-2">
+                {isMerchant && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(routes.collections)}
+                    className="m-0 inline-flex items-center gap-1.5 rounded-full bg-[#5B2EE0] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105 dark:bg-[#FFD54A] dark:text-[#1C1633]"
+                  >
+                    <Store className="size-3.5" />
+                    Ir a Cobros
+                    <ArrowRight className="size-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextType = isMerchant ? 'personal' : 'merchant';
+                    setAccountType(nextType);
+                    useNotificationStore.getState().notify({
+                      title: nextType === 'merchant' ? '¡Modalidad Vendedor activada!' : 'Modalidad Personal activada',
+                      description: nextType === 'merchant'
+                        ? 'Se habilitaron las secciones de Cobros y QR en el menú y accesos rápidos.'
+                        : 'Volviste al modo de cuenta personal.',
+                      type: 'transfer',
+                    });
+                  }}
+                  className="m-0 rounded-full border border-[#5B2EE0] px-3 py-1.5 text-xs font-semibold text-[#5B2EE0] transition-colors hover:bg-[#5B2EE0]/10 dark:border-[#FFD54A] dark:text-[#FFD54A] dark:hover:bg-[#FFD54A]/10"
+                >
+                  {isMerchant ? 'Pasar a Personal' : 'Activar Vendedor'}
+                </button>
+              </div>
             </div>
           </section>
 

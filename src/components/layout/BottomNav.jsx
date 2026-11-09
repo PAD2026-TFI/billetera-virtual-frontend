@@ -1,19 +1,33 @@
-import { ArrowLeftRight, CreditCard, Home, ListOrdered, QrCode } from 'lucide-react';
+import { ArrowLeftRight, CreditCard, Home, ListOrdered, QrCode, Store } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { routes, sectionFromPath } from '@/lib/routes';
+import { isMerchantUser, useAuthStore } from '@/store/useAuthStore';
 
-const left = [
+const personalLeft = [
   { id: 'home', label: 'Inicio', icon: Home },
   { id: 'movements', label: 'Movimientos', icon: ListOrdered },
 ];
-const right = [
+const personalRight = [
   { id: 'transfer', label: 'Transferir', icon: ArrowLeftRight },
   { id: 'card', label: 'Tarjeta', icon: CreditCard },
+];
+
+const merchantLeft = [
+  { id: 'home', label: 'Inicio', icon: Home },
+  { id: 'collections', label: 'Cobros', icon: Store },
+];
+const merchantRight = [
+  { id: 'transfer', label: 'Transferir', icon: ArrowLeftRight },
+  { id: 'movements', label: 'Movimientos', icon: ListOrdered },
 ];
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const active = sectionFromPath(useLocation().pathname);
+  const isMerchant = useAuthStore(state => isMerchantUser(state.session?.user));
+
+  const left = isMerchant ? merchantLeft : personalLeft;
+  const right = isMerchant ? merchantRight : personalRight;
 
   return (
     <nav
@@ -21,7 +35,14 @@ export default function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-20 border-t border-[#ECE9F5] bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg lg:hidden dark:border-[#261E3D] dark:bg-[#0E0A1A]/85"
     >
       <div className="mx-auto grid max-w-md grid-cols-5 items-end px-2">
-        {left.map(item => <NavItem key={item.id} item={item} active={active === item.id} onSelect={() => navigate(routes[item.id])} />)}
+        {left.map(item => (
+          <NavItem
+            key={item.id}
+            item={item}
+            active={active === item.id}
+            onSelect={() => navigate(routes[item.id])}
+          />
+        ))}
         <div className="flex justify-center">
           <button
             type="button"
@@ -33,7 +54,14 @@ export default function BottomNav() {
             <QrCode className="size-6" />
           </button>
         </div>
-        {right.map(item => <NavItem key={item.id} item={item} active={active === item.id} onSelect={() => navigate(routes[item.id])} />)}
+        {right.map(item => (
+          <NavItem
+            key={item.id}
+            item={item}
+            active={active === item.id}
+            onSelect={() => navigate(routes[item.id])}
+          />
+        ))}
       </div>
     </nav>
   );
@@ -45,7 +73,11 @@ function NavItem({ item: { label, icon: Icon }, active, onSelect }) {
       type="button"
       onClick={onSelect}
       aria-current={active ? 'page' : undefined}
-      className={`m-0 flex h-16 flex-col items-center justify-center gap-1 rounded-none border-0 bg-transparent p-0 text-[11px] font-medium ${active ? 'text-[#4C1DB8] dark:text-[#B9A6FF]' : 'text-[#8C87A3] dark:text-[#6B6485]'}`}
+      className={`m-0 flex h-16 flex-col items-center justify-center gap-1 rounded-none border-0 bg-transparent p-0 text-[11px] font-medium ${
+        active
+          ? 'text-[#4C1DB8] dark:text-[#B9A6FF]'
+          : 'text-[#8C87A3] dark:text-[#6B6485]'
+      }`}
     >
       <Icon className="size-[22px]" aria-hidden="true" />
       {label}

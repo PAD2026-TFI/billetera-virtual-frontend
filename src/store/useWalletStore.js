@@ -84,6 +84,18 @@ export const useWalletStore = create((set, get) => ({
       }
       set({ summary, status: 'ready' });
       ensureMovementSync();
+      if (isLiveSession()) {
+        api('/api/v1/me/merchant/payment-links')
+          .then(links => {
+            if (Array.isArray(links) && links.length > 0) {
+              const auth = useAuthStore.getState();
+              if (auth.session?.user && auth.session.user.accountType !== 'merchant') {
+                auth.setAccountType('merchant');
+              }
+            }
+          })
+          .catch(() => {});
+      }
     } catch {
       set({ status: 'error' });
     }

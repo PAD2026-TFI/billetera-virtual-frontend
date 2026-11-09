@@ -8,6 +8,7 @@ import AccountDetails from '@/components/dashboard/AccountDetails';
 import AppLayout, { panelClass } from '@/components/layout/AppLayout';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import { routes } from '@/lib/routes';
+import { isMerchantUser, useAuthStore } from '@/store/useAuthStore';
 import { useWalletStore } from '@/store/useWalletStore';
 
 export function greetingFor(date = new Date()) {
@@ -19,6 +20,7 @@ export function greetingFor(date = new Date()) {
 
 function DashboardHeader({ summary }) {
   const navigate = useNavigate();
+  const isMerchant = useAuthStore(state => isMerchantUser(state.session?.user));
   const fullName = `${summary.holder.firstName} ${summary.holder.lastName}`;
   return (
     <header className="flex items-center justify-between gap-4">
@@ -33,7 +35,9 @@ function DashboardHeader({ summary }) {
           </span>
         </h1>
         <p className="mt-1 mb-0 hidden text-sm text-white/75 lg:block">
-          Resumen en tiempo real de tu cuenta personal.
+          {isMerchant
+            ? 'Panel de cobros y administración de tu comercio.'
+            : 'Resumen en tiempo real de tu cuenta personal.'}
         </p>
       </div>
 
