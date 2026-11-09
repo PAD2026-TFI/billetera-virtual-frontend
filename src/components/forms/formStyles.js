@@ -8,11 +8,13 @@ export const fieldInputClass =
 
 export const primaryActionClass =
   'm-0 h-12 w-full rounded-full border-0 bg-[#4C1DB8] px-6 text-[15px] font-semibold text-white ' +
-  'shadow-[0_10px_24px_-10px_rgba(76,29,184,0.7)] hover:bg-[#3D1499] disabled:opacity-60 dark:bg-[#5B2EE0] dark:hover:bg-[#6C3BF4]';
+  'shadow-[0_10px_24px_-10px_rgba(76,29,184,0.7)] hover:bg-[#3D1499] ' +
+  'disabled:bg-[#ECE9F5] disabled:text-[#8C87A3] disabled:shadow-none disabled:cursor-not-allowed ' +
+  'dark:bg-[#5B2EE0] dark:hover:bg-[#6C3BF4] dark:disabled:bg-[#1E1735] dark:disabled:text-[#6B6485]';
 
 export const secondaryActionClass =
-  'm-0 h-12 w-full rounded-full border-0 bg-[#F3F1F9] px-6 text-[15px] font-semibold text-[#4C1DB8] shadow-none hover:bg-[#E9E5F6] ' +
-  'dark:bg-[#1E1735] dark:text-[#B9A6FF] dark:hover:bg-[#281F45]';
+  'm-0 h-12 w-full rounded-full border border-[#ECE9F5] bg-white px-6 text-[15px] font-semibold text-[#4A4560] shadow-sm transition-colors ' +
+  'hover:bg-[#F3F1F9] hover:text-[#1C1633] dark:border-[#261E3D] dark:bg-[#140F24] dark:text-[#9D97B5] dark:hover:bg-[#1E1735] dark:hover:text-[#F4F2FA]';
 
 export const alertClass = 'm-0 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-rose-950/40 dark:text-rose-300';
 

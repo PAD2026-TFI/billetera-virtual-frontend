@@ -1,33 +1,31 @@
-:root{font-family:system-ui,sans-serif;color:#16253d;background:#f3f5f9;font-synthesis:none}
-*{box-sizing:border-box}
-body{margin:0}
-main{max-width:850px;margin:0 auto;padding:28px 20px}
-main header{display:flex;justify-content:space-between;align-items:center;gap:16px}
-main h1{margin:0 0 20px;font-size:2rem}
-main h2{font-size:1.25rem;margin-top:0}
-.eyebrow{font-size:.85rem;color:#536078}
-main section{background:white;border:1px solid #dce2ec;border-radius:16px;padding:24px;margin:20px 0;box-shadow:0 5px 18px #16253d08}
-main form{display:flex;flex-direction:column;gap:14px;max-width:450px}
-main label{display:flex;flex-direction:column;gap:7px;font-weight:600}
-main input{font:inherit;padding:12px;border:1px solid #8997ad;border-radius:8px;width:100%}
-main input:read-only{background:#eef1f6}
-main button,main .button{font:inherit;font-weight:600;background:#234fd4;color:white;border:1px solid #234fd4;border-radius:8px;padding:12px 16px;cursor:pointer;text-align:center;display:inline-block;text-decoration:none;margin:4px 6px 4px 0}
-.secondary{background:white;color:#234599;border-color:#a5b6da}
-main button:disabled{opacity:.55;cursor:wait}
-main button:focus-visible,main a:focus-visible,main input:focus-visible{outline:3px solid #edb400;outline-offset:3px}
-.notice{background:#fff4cc;color:#574300;padding:14px;border-radius:8px;line-height:1.5}
-.error{background:#ffe8e8;color:#8a1616;border:1px solid #c95b5b;padding:16px;border-radius:8px}
-.balance{font-size:2.5rem;font-weight:750;margin:10px 0}
-.muted,footer{color:#536078;font-size:.9rem;line-height:1.5}
-.reference{overflow-wrap:anywhere;font-family:monospace}
-.movements{padding:0;list-style:none}
-.movements li{display:flex;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #e2e6ee}
-.movements p{margin:6px 0}
-.movements time{color:#536078;font-size:.85rem}
+.sandbox-main{max-width:850px;margin:0 auto;padding:28px 20px;font-family:system-ui,sans-serif;color:#16253d;background:#f3f5f9;box-sizing:border-box}
+.sandbox-main *{box-sizing:border-box}
+.sandbox-main header{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.sandbox-main h1{margin:0 0 20px;font-size:2rem}
+.sandbox-main h2{font-size:1.25rem;margin-top:0}
+.sandbox-main .eyebrow{font-size:.85rem;color:#536078}
+.sandbox-main section{background:white;border:1px solid #dce2ec;border-radius:16px;padding:24px;margin:20px 0;box-shadow:0 5px 18px #16253d08}
+.sandbox-main form{display:flex;flex-direction:column;gap:14px;max-width:450px}
+.sandbox-main label{display:flex;flex-direction:column;gap:7px;font-weight:600}
+.sandbox-main input{font:inherit;padding:12px;border:1px solid #8997ad;border-radius:8px;width:100%}
+.sandbox-main input:read-only{background:#eef1f6}
+.sandbox-main button,.sandbox-main .button{font:inherit;font-weight:600;background:#234fd4;color:white;border:1px solid #234fd4;border-radius:8px;padding:12px 16px;cursor:pointer;text-align:center;display:inline-block;text-decoration:none;margin:4px 6px 4px 0}
+.sandbox-main .secondary{background:white;color:#234599;border-color:#a5b6da}
+.sandbox-main button:disabled{opacity:.55;cursor:wait}
+.sandbox-main button:focus-visible,.sandbox-main a:focus-visible,.sandbox-main input:focus-visible{outline:3px solid #edb400;outline-offset:3px}
+.sandbox-main .notice{background:#fff4cc;color:#574300;padding:14px;border-radius:8px;line-height:1.5}
+.sandbox-main .error{background:#ffe8e8;color:#8a1616;border:1px solid #c95b5b;padding:16px;border-radius:8px}
+.sandbox-main .balance{font-size:2.5rem;font-weight:750;margin:10px 0}
+.sandbox-main .muted,.sandbox-main footer{color:#536078;font-size:.9rem;line-height:1.5}
+.sandbox-main .reference{overflow-wrap:anywhere;font-family:monospace}
+.sandbox-main .movements{padding:0;list-style:none}
+.sandbox-main .movements li{display:flex;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #e2e6ee}
+.sandbox-main .movements p{margin:6px 0}
+.sandbox-main .movements time{color:#536078;font-size:.85rem}
 @media(max-width:500px){
-  main{padding:20px 12px}
-  main section{padding:18px}
-  main header{align-items:flex-start}
-  .balance{font-size:2rem}
-  .movements li{flex-direction:column;gap:8px}
+  .sandbox-main{padding:20px 12px}
+  .sandbox-main section{padding:18px}
+  .sandbox-main header{align-items:flex-start}
+  .sandbox-main .balance{font-size:2rem}
+  .sandbox-main .movements li{flex-direction:column;gap:8px}
 }

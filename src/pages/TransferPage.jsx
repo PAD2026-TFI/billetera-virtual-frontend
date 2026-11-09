@@ -86,6 +86,7 @@ function TransferContent({ summary }) {
             <AmountStep
               balance={summary.balance}
               draft={draft}
+              recipient={recipient}
               onBack={() => setStep(0)}
               onContinue={review}
             />
