@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { ChevronRight, UserRound } from 'lucide-react';
 import WalletCard from '@/components/dashboard/WalletCard';
 import QuickActions from '@/components/dashboard/QuickActions';
 import SpendingBanner from '@/components/dashboard/SpendingBanner';
@@ -22,26 +23,36 @@ function DashboardHeader({ summary }) {
   return (
     <header className="flex items-center justify-between gap-4">
       <div>
-        <p className="m-0 text-[15px] text-[#4A4560] lg:hidden dark:text-[#9D97B5]">{greetingFor()},</p>
-        <h1 className="m-0 text-[28px] leading-tight font-bold tracking-tight lg:text-[32px] lg:text-white">
+        <p className="m-0 text-xs font-semibold tracking-wider text-[#6E6888] uppercase lg:hidden dark:text-[#9D97B5]">
+          {greetingFor()}
+        </p>
+        <h1 className="m-0 text-[28px] leading-tight font-bold tracking-[-0.02em] text-[#1C1633] lg:text-[34px] lg:text-white dark:text-[#F4F2FA]">
           <span className="lg:hidden">{fullName}</span>
-          <span className="hidden lg:inline">{greetingFor()}, {summary.holder.firstName}</span>
+          <span className="hidden lg:inline">
+            {greetingFor()}, {summary.holder.firstName}
+          </span>
         </h1>
-        <p className="mt-1 mb-0 hidden text-sm text-white/75 lg:block">Así está tu billetera hoy.</p>
+        <p className="mt-1 mb-0 hidden text-sm text-white/75 lg:block">
+          Resumen en tiempo real de tu cuenta personal.
+        </p>
       </div>
+
       <div className="flex items-center gap-3">
         <ThemeToggle className="lg:hidden" />
         <div className="hidden text-right lg:block">
           <p className="m-0 text-sm font-semibold text-white">{fullName}</p>
-          <p className="m-0 text-xs text-white/70">Cuenta personal</p>
+          <p className="m-0 font-mono text-xs text-[#FFD54A]/90">{summary.account.alias}</p>
         </div>
         <button
           type="button"
           onClick={() => navigate(routes.profile)}
           aria-label="Ver mi perfil"
-          className="m-0 grid size-12 p-0 place-items-center rounded-full border-2 border-white bg-[#4C1DB8] text-sm font-semibold text-white shadow-[0_8px_16px_-8px_rgba(76,29,184,0.7)] lg:border-white/40 lg:bg-[#FFD54A] lg:text-[#2A0E7A] dark:border-[#090613] lg:dark:border-white/30"
+          className="m-0 grid size-12 place-items-center rounded-2xl border-2 border-white bg-[#4C1DB8] p-0 text-sm font-bold text-white shadow-[0_10px_20px_-8px_rgba(76,29,184,0.75)] transition-transform hover:scale-105 lg:border-white/30 lg:bg-[#FFD54A] lg:text-[#1C1633] dark:border-[#261E3D] lg:dark:border-white/25"
         >
-          <span aria-hidden="true">{summary.holder.firstName[0]}{summary.holder.lastName[0]}</span>
+          <span aria-hidden="true">
+            {summary.holder.firstName[0]}
+            {summary.holder.lastName[0]}
+          </span>
         </button>
       </div>
     </header>
@@ -55,9 +66,29 @@ export default function DashboardPage() {
   return (
     <AppLayout header={summary => <DashboardHeader summary={summary} />}>
       {summary => (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-7 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start lg:gap-8">
-          <div className={`contents lg:grid lg:min-w-0 lg:grid-cols-[minmax(0,1fr)] lg:content-start lg:gap-7 ${panelClass}`}>
-            <h2 className="m-0 hidden text-lg font-semibold lg:block">Mi cuenta</h2>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-7 lg:grid-cols-[minmax(0,390px)_minmax(0,1fr)] lg:items-stretch lg:gap-8">
+          <div
+            className={`contents lg:grid lg:h-full lg:min-w-0 lg:grid-cols-[minmax(0,1fr)] lg:content-start lg:gap-6 ${panelClass}`}
+          >
+            <div className="hidden items-center justify-between lg:flex">
+              <div className="flex items-center gap-2">
+                <span aria-hidden="true" className="size-2 rounded-full bg-[#FFD54A]" />
+                <h2 className="m-0 text-base font-bold tracking-tight">Mi cuenta</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(routes.profile)}
+                className="group inline-flex h-8 items-center gap-1 rounded-full bg-[#F3F1F9] px-3 text-xs font-semibold text-[#4C1DB8] transition-colors hover:bg-[#E9E5F6] dark:bg-[#1E1735] dark:text-[#C4B2FF] dark:hover:bg-[#281F45]"
+              >
+                <UserRound className="size-3.5" aria-hidden="true" />
+                Ver mis datos
+                <ChevronRight
+                  className="size-3 transition-transform duration-150 group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+
             <div className="order-1 min-w-0 lg:order-none">
               <WalletCard
                 holderName={`${summary.holder.firstName} ${summary.holder.lastName}`}
@@ -68,15 +99,27 @@ export default function DashboardPage() {
                 onToggleHidden={toggleBalanceHidden}
               />
             </div>
+
             <div className="order-2 lg:order-none">
               <QuickActions onAction={action => navigate(routes[action])} />
             </div>
-            <div className="order-5 min-w-0 lg:order-none">
+
+            <div className="order-5 flex min-w-0 flex-col gap-3 lg:order-none">
               <AccountDetails cvu={summary.account.cvu} alias={summary.account.alias} />
+              <button
+                type="button"
+                onClick={() => navigate(routes.profile)}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] py-3 text-sm font-semibold text-[#4C1DB8] transition-colors hover:bg-[#EDE7FC] lg:hidden dark:border-[#261E3D] dark:bg-[#19122C] dark:text-[#FFD54A] dark:hover:bg-[#241B3E]"
+              >
+                <UserRound className="size-4" aria-hidden="true" />
+                Ver mis datos
+              </button>
             </div>
           </div>
 
-          <div className={`contents lg:grid lg:min-w-0 lg:grid-cols-[minmax(0,1fr)] lg:content-start lg:gap-7 ${panelClass}`}>
+          <div
+            className={`contents lg:grid lg:h-full lg:min-w-0 lg:grid-cols-[minmax(0,1fr)] lg:content-start lg:gap-6 ${panelClass}`}
+          >
             {!spendingDismissed && (
               <div className="order-3 min-w-0 lg:order-none">
                 <SpendingBanner
@@ -88,7 +131,11 @@ export default function DashboardPage() {
               </div>
             )}
             <div className="order-4 min-w-0 lg:order-none">
-              <RecentMovements movements={summary.recentMovements} limit={6} onViewAll={() => navigate(routes.movements)} />
+              <RecentMovements
+                movements={summary.recentMovements}
+                limit={6}
+                onViewAll={() => navigate(routes.movements)}
+              />
             </div>
           </div>
         </div>
