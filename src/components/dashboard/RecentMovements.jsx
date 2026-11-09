@@ -29,7 +29,7 @@ const statusLabels = {
   },
 };
 
-const rowGrid = 'xl:grid xl:grid-cols-[minmax(0,1fr)_96px_132px_108px] xl:items-center xl:gap-3';
+const rowGrid = 'xl:grid xl:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] xl:items-center xl:gap-3';
 
 export default function RecentMovements({
   movements,
@@ -127,11 +127,11 @@ export default function RecentMovements({
                       >
                         <Icon className="size-5 stroke-[2.1]" aria-hidden="true" />
                       </span>
-                      <div className="min-w-0">
-                        <p className="m-0 line-clamp-1 text-[15px] leading-snug font-semibold tracking-[-0.01em] text-[#1C1633] dark:text-[#F4F2FA]">
+                      <div className="min-w-0 flex-1">
+                        <p className="m-0 truncate text-[15px] leading-snug font-semibold tracking-[-0.01em] text-[#1C1633] dark:text-[#F4F2FA]">
                           {movement.title}
                         </p>
-                        <p className="m-0 mt-0.5 text-xs text-[#6E6888] dark:text-[#9D97B5]">
+                        <p className="m-0 mt-0.5 truncate text-xs text-[#6E6888] dark:text-[#9D97B5]">
                           <span className="xl:hidden">
                             <time dateTime={movement.createdAt} className="font-mono font-medium">
                               {formatDateTime(movement.createdAt)}
@@ -143,7 +143,7 @@ export default function RecentMovements({
                               </span>
                             )}
                           </span>
-                          <span className="hidden xl:inline">{movement.detail}</span>
+                          <span className="hidden truncate xl:inline">{movement.detail}</span>
                         </p>
                       </div>
                     </div>
