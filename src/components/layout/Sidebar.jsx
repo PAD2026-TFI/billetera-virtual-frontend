@@ -1,4 +1,4 @@
-import { ArrowLeftRight, CreditCard, Home, ListOrdered, LogOut, Moon, Plus, QrCode, Sun, UserRound } from 'lucide-react';
+import { ArrowLeftRight, CreditCard, Home, ListOrdered, LogOut, Moon, QrCode, Sun, UserRound } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Wordmark } from '@/components/auth/AuthLayout';
 import { routes, sectionFromPath } from '@/lib/routes';
@@ -10,7 +10,6 @@ const sections = [
     { id: 'home', label: 'Inicio', icon: Home },
     { id: 'movements', label: 'Movimientos', icon: ListOrdered },
     { id: 'transfer', label: 'Transferir', icon: ArrowLeftRight },
-    { id: 'topUp', label: 'Cargar saldo', icon: Plus },
     { id: 'pay', label: 'Pagar con QR', icon: QrCode },
   ],
   [
@@ -44,7 +43,11 @@ export default function Sidebar() {
                     type="button"
                     onClick={() => navigate(routes[id])}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`m-0 flex h-11 w-full items-center gap-3 rounded-xl border-0 px-3 text-left text-sm font-medium transition-colors ${isActive ? 'bg-[#4C1DB8] text-white dark:bg-[#5B2EE0]' : 'bg-transparent text-white/65 hover:bg-white/5 hover:text-white'}`}
+                    className={`m-0 flex h-11 w-full items-center gap-3 rounded-xl border-0 px-3 text-left text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-[#4C1DB8] text-white dark:bg-[#5B2EE0]'
+                        : 'bg-transparent text-white/65 hover:bg-white/5 hover:text-white'
+                    }`}
                   >
                     <Icon className="size-[18px]" aria-hidden="true" />
                     {label}

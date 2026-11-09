@@ -116,14 +116,14 @@ export default function RecipientStep({ account, onConfirm }) {
         >
           Alias, CVU o CBU
         </label>
-        <div className="flex items-center gap-2">
-          <div className="relative min-w-0 flex-1">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-2">
+          <div className="relative min-w-0 w-full flex-1">
             <IconInput
               icon={Search}
               id="destination"
               autoComplete="off"
               placeholder="nombre.apellido.padi o 22 dígitos"
-              className={`${fieldInputClass} h-11 bg-white pl-11 dark:bg-[#120D20]`}
+              className={`${fieldInputClass} h-11 w-full bg-white pl-11 dark:bg-[#120D20]`}
               aria-invalid={!!errors.destination}
               {...register('destination')}
             />
@@ -131,7 +131,7 @@ export default function RecipientStep({ account, onConfirm }) {
           <button
             type="submit"
             disabled={searching}
-            className={`${secondaryActionClass} h-11 shrink-0 px-4 py-0`}
+            className={`${secondaryActionClass} h-11 w-full shrink-0 px-5 py-0 sm:w-auto`}
           >
             Buscar cuenta
           </button>
