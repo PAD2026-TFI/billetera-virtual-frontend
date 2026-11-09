@@ -61,6 +61,18 @@ describe('Pagar con QR', () => {
     await user.click(screen.getByRole('button', { name: 'Buscar' }));
     expect(screen.getByText('No encontramos un cobro con ese código.')).toBeInTheDocument();
   });
+
+  it('encuentra un cobro a partir del formato checkout/index.html?token=...', async () => {
+    const user = userEvent.setup();
+    renderAt('/pagar', <PayPage />);
+    await user.type(
+      await screen.findByLabelText('O ingresá el código a mano'),
+      'http://localhost:5000/checkout/index.html?token=techstore-auriculares',
+    );
+    await user.click(screen.getByRole('button', { name: 'Buscar' }));
+    expect(await screen.findByRole('heading', { name: 'Confirmá el pago' })).toBeInTheDocument();
+    expect(screen.getByText('Tech Store SRL')).toBeInTheDocument();
+  });
 });
 
 describe('Mi tarjeta', () => {

@@ -39,6 +39,7 @@ export default function AppRoutes() {
         <Route path={routes.paymentReturn} element={<Navigate to={routes.sandbox} replace />} />
       </Route>
       <Route path={routes.checkout} element={<CheckoutPage />} />
+      <Route path="/checkout/index.html" element={<CheckoutPage />} />
       <Route path="*" element={<Navigate to={routes.home} replace />} />
     </Routes>
   );

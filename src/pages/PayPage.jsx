@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import jsQR from 'jsqr';
 import {
   ArrowRight,
   Camera,
@@ -21,6 +22,7 @@ import {
   sectionTitleClass,
 } from '@/components/forms/formStyles';
 import { formatCurrency, formatDateTime } from '@/lib/formatters';
+import { parseQrPaymentCode } from '@/lib/qr';
 import { routes } from '@/lib/routes';
 import { fetchCheckoutLink } from '@/services/mocks/checkoutService';
 import { mockQrPayments } from '@/services/mocks/walletService';
@@ -31,17 +33,139 @@ function Scanner({ onScan }) {
   const [error, setError] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const canvasRef = useRef(null);
+  const isProcessingRef = useRef(false);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraActive(false);
+  }, []);
+
+  const handleResolveCode = useCallback(
+    async rawCode => {
+      if (!rawCode || isProcessingRef.current) return;
+      const cleanToken = parseQrPaymentCode(rawCode);
+      if (!cleanToken) return;
+
+      isProcessingRef.current = true;
+      setIsProcessing(true);
+      setError('');
+
+      const normalizedClean = cleanToken.toLowerCase();
+      const normalizedRaw = rawCode.trim().toLowerCase();
+
+      const mockPayment = mockQrPayments.find(
+        item => item.code.toLowerCase() === normalizedClean || item.code.toLowerCase() === normalizedRaw,
+      );
+
+      if (mockPayment) {
+        stopCamera();
+        onScan(mockPayment);
+        isProcessingRef.current = false;
+        setIsProcessing(false);
+        return;
+      }
+
+      try {
+        const link = await fetchCheckoutLink(cleanToken);
+        if (link && link.isPayable) {
+          stopCamera();
+          onScan({
+            code: link.token,
+            token: link.token,
+            isBackendLink: true,
+            merchant: link.merchantName || 'Comercio adherido padi.',
+            description: link.title || link.description || 'Pago con QR',
+            amount: link.amount,
+          });
+          return;
+        }
+
+        if (link && !link.isPayable) {
+          setError('Este cobro ya fue abonado o el link expiró.');
+        } else {
+          setError('No encontramos un cobro con ese código.');
+        }
+      } catch {
+        setError('No encontramos un cobro con ese código.');
+      } finally {
+        isProcessingRef.current = false;
+        setIsProcessing(false);
+      }
+    },
+    [onScan, stopCamera],
+  );
+
+  const scanFrame = useCallback(async () => {
+    if (!videoRef.current || isProcessingRef.current) return;
+    const video = videoRef.current;
+    if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+
+    let detectedText = null;
+
+    if ('BarcodeDetector' in window) {
+      try {
+        const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+        const detected = await detector.detect(video);
+        if (detected?.length > 0 && detected[0]?.rawValue) {
+          detectedText = detected[0].rawValue;
+        }
+      } catch {
+        detectedText = null;
+      }
+    }
+
+    if (!detectedText && video.videoWidth > 0 && video.videoHeight > 0) {
+      try {
+        let canvas = canvasRef.current;
+        if (!canvas) {
+          canvas = document.createElement('canvas');
+          canvasRef.current = canvas;
+        }
+        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+        }
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (context) {
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const result = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'dontInvert',
+          });
+          if (result && result.data) {
+            detectedText = result.data;
+          }
+        }
+      } catch {
+        detectedText = null;
+      }
+    }
+
+    if (detectedText && !isProcessingRef.current) {
+      handleResolveCode(detectedText);
+    }
+  }, [handleResolveCode]);
 
   async function startCamera() {
     setCameraError('');
     try {
       if (!navigator?.mediaDevices?.getUserMedia) {
-        throw new Error('Cámara no soportada en este navegador');
+        throw new Error('Cámara no soportada');
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
       });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -55,56 +179,41 @@ function Scanner({ onScan }) {
     }
   }
 
-  function stopCamera() {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setCameraActive(false);
-  }
-
   useEffect(() => {
     startCamera();
     return () => {
       stopCamera();
     };
-  }, []);
+  }, [stopCamera]);
+
+  useEffect(() => {
+    if (!cameraActive) return;
+
+    let mounted = true;
+    let timerId = null;
+
+    const runScannerLoop = () => {
+      if (!mounted) return;
+      scanFrame();
+      timerId = setTimeout(runScannerLoop, 150);
+    };
+
+    timerId = setTimeout(runScannerLoop, 250);
+
+    return () => {
+      mounted = false;
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [cameraActive, scanFrame]);
 
   async function lookUp(event) {
-    event.preventDefault();
+    if (event?.preventDefault) event.preventDefault();
     const trimmed = code.trim();
-    const payment = mockQrPayments.find(item => item.code.toLowerCase() === trimmed.toLowerCase());
-    if (payment) {
-      setError('');
-      stopCamera();
-      onScan(payment);
+    if (!trimmed) {
+      setError('Ingresá un código o link de cobro.');
       return;
     }
-    if (import.meta.env.MODE !== 'test' && trimmed) {
-      try {
-        const link = await fetchCheckoutLink(trimmed);
-        if (link && link.isPayable) {
-          setError('');
-          stopCamera();
-          onScan({
-            code: link.token,
-            token: link.token,
-            isBackendLink: true,
-            merchant: link.merchantName || 'Comercio adherido padi.',
-            description: link.title || link.description || 'Pago con QR',
-            amount: link.amount,
-          });
-          return;
-        }
-      } catch {
-        setError('No encontramos un cobro con ese código.');
-        return;
-      }
-    }
-    setError('No encontramos un cobro con ese código.');
+    await handleResolveCode(trimmed);
   }
 
   return (
@@ -160,6 +269,13 @@ function Scanner({ onScan }) {
           </div>
         )}
 
+        {isProcessing && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#090416]/85 p-4 text-center backdrop-blur-sm">
+            <Loader2 className="size-8 animate-spin text-[#FFD54A]" />
+            <span className="text-xs font-semibold text-white">Procesando cobro…</span>
+          </div>
+        )}
+
         {[
           'top-5 left-5 border-t-[3px] border-l-[3px] rounded-tl-2xl',
           'top-5 right-5 border-t-[3px] border-r-[3px] rounded-tr-2xl',
@@ -173,10 +289,12 @@ function Scanner({ onScan }) {
           />
         ))}
 
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-8 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-[#FFD54A] to-transparent shadow-[0_0_16px_#FFD54A] motion-safe:animate-pulse"
-        />
+        {cameraActive && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-8 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-[#FFD54A] to-transparent shadow-[0_0_16px_#FFD54A] motion-safe:animate-pulse"
+          />
+        )}
       </div>
 
       <div className="rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] p-4 dark:border-[#261E3D] dark:bg-[#19122C]">
@@ -191,16 +309,17 @@ function Scanner({ onScan }) {
               id="qr-code"
               value={code}
               onChange={event => setCode(event.target.value)}
-              placeholder="QR-CAFE-001"
+              placeholder="QR-CAFE-001 o link de pago"
               className={`${fieldInputClass} bg-white pl-11 font-mono uppercase dark:bg-[#120D20]`}
               aria-invalid={!!error}
             />
           </Field>
           <button
             type="submit"
+            disabled={isProcessing}
             className={`${primaryActionClass} sm:w-auto sm:px-6 ${error ? 'sm:mb-[22px]' : ''}`}
           >
-            Buscar
+            {isProcessing ? <Loader2 className="size-4 animate-spin" /> : 'Buscar'}
           </button>
         </form>
       </div>
