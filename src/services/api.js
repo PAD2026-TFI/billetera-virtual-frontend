@@ -26,7 +26,10 @@ const codeMessages = {
   CARD_REJECTED: 'La tarjeta fue rechazada. Revisá los datos e intentá con otro medio.',
   INVALID_IDEMPOTENCY_KEY: 'Falta el identificador de seguridad de la operación.',
   DUPLICATE_ACTIVE_CARD_REQUEST: 'Ya tenés una solicitud de tarjeta física en curso.',
-  INVALID_ADDRESS: 'Revisá los datos del domicilio de entrega.'
+  INVALID_ADDRESS: 'Revisá los datos del domicilio de entrega.',
+  MERCHANT_REQUIRED: 'Activá la modalidad Vendedor desde Mi perfil.',
+  INTEGRATION_CONFLICT: 'La integración cambió. Actualizá su estado antes de volver a intentar.',
+  WALLET_UNAVAILABLE: 'Necesitás una billetera activa para generar una API Key.'
 };
 const sessionExpiredMessage = 'Tu sesión venció. Iniciá sesión de nuevo.';
 const forbiddenMessage = 'No tenés permisos para realizar esta acción.';

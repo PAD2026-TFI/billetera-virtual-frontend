@@ -6,6 +6,7 @@ export const routes = {
   pay: '/pagar',
   card: '/tarjeta',
   collections: '/cobros',
+  integrations: '/integraciones',
   profile: '/perfil',
   sandbox: '/sandbox',
   paymentReturn: '/payments/return',
