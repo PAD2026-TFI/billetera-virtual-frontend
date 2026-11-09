@@ -72,7 +72,7 @@ function TransferContent({ summary }) {
         <TransferStepper current={step} />
         {step < 3 && <h2 className={`${sectionTitleClass} m-0 tracking-tight`}>{stepTitles[step]}</h2>}
 
-        <div className="flex min-h-0 flex-1 flex-col justify-between overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col justify-between overflow-hidden lg:overflow-visible">
           {step === 0 && (
             <RecipientStep
               account={summary.account}

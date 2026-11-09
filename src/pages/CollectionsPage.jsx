@@ -76,15 +76,18 @@ function CollectionsContent({ summary }) {
 
     try {
       if (isLiveSession()) {
+        const payload = {
+          amount,
+          title: title.trim(),
+          currency: 'ARS',
+        };
+        if (description.trim()) {
+          payload.description = description.trim();
+        }
+
         const res = await api('/api/v1/me/merchant/payment-links', {
           method: 'POST',
-          body: {
-            amount,
-            title: title.trim(),
-            description: description.trim() || undefined,
-            type: 'SingleUse',
-            currency: 'ARS',
-          },
+          body: payload,
         });
         setActiveLink(res);
         setLinksList(prev => [res, ...prev]);
