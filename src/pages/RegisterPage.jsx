@@ -8,5 +8,17 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const goToLogin = () => navigate(routes.login);
 
-  return <RegisterForm onRegistered={(_user, credentials) => signIn(credentials).catch(goToLogin)} onCancel={goToLogin} />;
+  return (
+    <RegisterForm
+      onRegistered={(user, credentials) => {
+        const isMerchant = user?.accountType === 'merchant';
+        signIn(credentials, user?.accountType)
+          .then(() => {
+            navigate(isMerchant ? routes.collections : routes.home, { replace: true });
+          })
+          .catch(goToLogin);
+      }}
+      onCancel={goToLogin}
+    />
+  );
 }

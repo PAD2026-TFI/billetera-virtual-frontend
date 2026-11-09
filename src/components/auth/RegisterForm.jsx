@@ -881,6 +881,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
         open={showSuccessModal}
         firstName={firstName}
         lastName={lastName}
+        accountType={accountType}
         onContinue={handleModalContinue}
       />
     </div>
