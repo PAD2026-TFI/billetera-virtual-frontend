@@ -21,10 +21,12 @@ const renderAt = path => render(<MemoryRouter initialEntries={[path]}><AppRoutes
 
 describe('Mi perfil', () => {
   it('muestra los datos personales y los de la cuenta', async () => {
+    const user = userEvent.setup();
     renderAt('/perfil');
     const personal = (await screen.findByRole('heading', { name: 'Datos personales' })).closest('section');
     expect(within(personal).getByText('Quintero')).toBeInTheDocument();
     expect(within(personal).getByText('paulina@example.com')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /datos para recibir dinero/i }));
     expect(screen.getByText('0000003100012345678901')).toBeInTheDocument();
     expect(screen.getByText('Cuenta activa')).toBeInTheDocument();
   });

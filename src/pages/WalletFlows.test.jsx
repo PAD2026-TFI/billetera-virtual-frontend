@@ -47,8 +47,8 @@ describe('Pagar con QR', () => {
   it('paga un código de prueba', async () => {
     const user = userEvent.setup();
     renderAt('/pagar', <PayPage />);
-    const codes = (await screen.findByRole('heading', { name: 'Códigos de prueba' })).closest('section');
-    await user.click(within(codes).getByRole('button', { name: /Café Martínez/ }));
+    await user.type(await screen.findByLabelText('O ingresá el código a mano'), 'QR-CAFE-001');
+    await user.click(screen.getByRole('button', { name: 'Buscar' }));
     await user.click(screen.getByRole('button', { name: 'Pagar' }));
     expect(await screen.findByRole('heading', { name: 'Pago realizado' })).toBeInTheDocument();
     expect(balance()).toBe(148490.75);
@@ -67,6 +67,7 @@ describe('Mi tarjeta', () => {
   it('pide la tarjeta física con una dirección validada', async () => {
     const user = userEvent.setup();
     renderAt('/tarjeta', <CardPage />);
+    await user.click(await screen.findByRole('button', { name: 'Pedir tarjeta física' }));
     await user.type(await screen.findByLabelText('Calle'), 'av. mate de luna');
     await user.type(screen.getByLabelText('Altura'), '2140');
     await user.type(screen.getByLabelText('Localidad'), 'san miguel de tucumán');
@@ -82,6 +83,7 @@ describe('Mi tarjeta', () => {
   it('valida la altura y el código postal', async () => {
     const user = userEvent.setup();
     renderAt('/tarjeta', <CardPage />);
+    await user.click(await screen.findByRole('button', { name: 'Pedir tarjeta física' }));
     await user.type(await screen.findByLabelText('Altura'), 'abc');
     await user.type(screen.getByLabelText('Código postal'), '12');
     await user.click(screen.getByRole('button', { name: 'Revisar dirección' }));
