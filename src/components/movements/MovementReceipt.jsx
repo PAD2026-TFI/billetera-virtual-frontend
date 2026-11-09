@@ -14,7 +14,13 @@ const kindLabels = {
 
 const fullDateTime = value =>
   new Intl.DateTimeFormat('es-AR', {
-    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
   }).format(new Date(value));
 
 function receiptText(movement) {
@@ -49,61 +55,104 @@ export default function MovementReceipt({ movement, onClose }) {
     }
   }
 
+  const isIncome = movement ? movement.amount > 0 : false;
+  const status = movement ? statusLabels[movement.status] ?? statusLabels.completed : statusLabels.completed;
+
   return (
     <Dialog.Root open={open} onOpenChange={value => !value && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-[#090613]/60 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-[#090613]/70 backdrop-blur-md" />
         {movement && (
           <Dialog.Content
             aria-describedby={undefined}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[92svh] overflow-y-auto rounded-t-[28px] bg-white p-6 font-[Poppins] text-[#1C1633] shadow-2xl sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[440px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[28px] dark:border dark:border-[#261E3D] dark:bg-[#140F24] dark:text-[#F4F2FA]"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[92svh] overflow-y-auto rounded-t-[32px] bg-white p-6 font-[Poppins] text-[#1C1633] shadow-[0_-20px_60px_rgba(9,6,19,0.45)] sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[440px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[32px] sm:shadow-[0_32px_80px_-20px_rgba(9,6,19,0.65)] dark:border dark:border-[#2C2247] dark:bg-[#140F24] dark:text-[#F4F2FA]"
           >
-            <div className="flex items-start justify-between">
-              <span className={`grid size-12 place-items-center rounded-full ${iconTone(movement.amount > 0)}`}>
-                {movement.status === 'completed' ? <CheckCircle2 className="size-6" aria-hidden="true" /> : <Clock3 className="size-6" aria-hidden="true" />}
-              </span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className={`grid size-11 place-items-center rounded-2xl ${iconTone(movement.kind, isIncome)}`}>
+                  {movement.status === 'completed' ? (
+                    <CheckCircle2 className="size-5 stroke-[2.2]" aria-hidden="true" />
+                  ) : (
+                    <Clock3 className="size-5 stroke-[2.2]" aria-hidden="true" />
+                  )}
+                </span>
+                <div>
+                  <span className="inline-flex items-end text-sm leading-none font-bold tracking-[-0.04em] text-[#2A0E7A] dark:text-white">
+                    padi
+                    <span aria-hidden="true" className="mb-[0.1em] ml-[0.06em] size-1.5 rounded-full bg-[#FFD54A]" />
+                  </span>
+                  <Dialog.Title className="m-0 text-xs font-medium text-[#6E6888] dark:text-[#9D97B5]">
+                    Comprobante de {kindLabels[movement.kind]?.toLowerCase() ?? 'movimiento'}
+                  </Dialog.Title>
+                </div>
+              </div>
+
               <Dialog.Close
                 aria-label="Cerrar comprobante"
-                className="m-0 grid size-11 place-items-center rounded-full border-0 bg-[#F3F1F9] p-0 text-[#4A4560] hover:bg-[#E9E5F6] dark:bg-[#1E1735] dark:text-[#9D97B5]"
+                className="m-0 grid size-10 place-items-center rounded-full border-0 bg-[#F3F1F9] p-0 text-[#4A4560] transition-colors hover:bg-[#E9E5F6] dark:bg-[#1E1735] dark:text-[#9D97B5] dark:hover:bg-[#281F45]"
               >
                 <X className="size-5" aria-hidden="true" />
               </Dialog.Close>
             </div>
 
-            <Dialog.Title className="m-0 mt-4 text-sm font-medium text-[#8C87A3] dark:text-[#9D97B5]">Comprobante de {kindLabels[movement.kind]?.toLowerCase() ?? 'movimiento'}</Dialog.Title>
-            <p className={`m-0 mt-1 font-mono text-[32px] leading-tight font-bold ${movement.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>
-              {signedAmount(movement.amount)}
-            </p>
-            <p className="m-0 mt-1 text-[15px] font-medium">{movement.title}</p>
+            <div className="mt-5 rounded-2xl bg-[#F8F6FC] p-5 text-center dark:bg-[#1B1430]">
+              <p
+                className={`m-0 font-mono text-[34px] leading-none font-bold tracking-[-0.03em] tabular-nums ${
+                  isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#1C1633] dark:text-[#F4F2FA]'
+                }`}
+              >
+                {signedAmount(movement.amount)}
+              </p>
+              <p className="m-0 mt-2 text-[15px] font-semibold text-[#1C1633] dark:text-[#F4F2FA]">
+                {movement.title}
+              </p>
+            </div>
 
-            <dl className="m-0 mt-6 grid gap-3 rounded-xl bg-[#F3F1F9] p-4 text-sm dark:bg-[#1E1735]">
+            <div aria-hidden="true" className="relative my-5 flex items-center">
+              <span className="w-full border-t border-dashed border-[#DFD9F0] dark:border-[#2E244A]" />
+            </div>
+
+            <dl className="m-0 grid gap-3.5 text-sm">
               <ReceiptRow label="Estado">
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${(statusLabels[movement.status] ?? statusLabels.completed).className}`}>
-                  {(statusLabels[movement.status] ?? statusLabels.completed).text}
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.className}`}>
+                  <span aria-hidden="true" className={`size-1.5 rounded-full ${status.dotClass}`} />
+                  {status.text}
                 </span>
               </ReceiptRow>
               <ReceiptRow label="Concepto">{movement.detail}</ReceiptRow>
-              <ReceiptRow label="Fecha y hora"><span className="font-mono">{fullDateTime(movement.createdAt)}</span></ReceiptRow>
+              <ReceiptRow label="Fecha y hora">
+                <span className="font-mono text-xs sm:text-sm">{fullDateTime(movement.createdAt)}</span>
+              </ReceiptRow>
               {movement.balanceAfter !== undefined && (
-                <ReceiptRow label="Saldo posterior"><span className="font-mono">{formatCurrency(movement.balanceAfter)}</span></ReceiptRow>
+                <ReceiptRow label="Saldo posterior">
+                  <span className="font-mono font-semibold">{formatCurrency(movement.balanceAfter)}</span>
+                </ReceiptRow>
               )}
-              <div className="grid gap-1">
-                <dt className="text-[#8C87A3] dark:text-[#9D97B5]">N.º de operación</dt>
-                <dd className="m-0 flex items-center justify-between gap-2">
-                  <span className="min-w-0 font-mono break-all">{movement.id}</span>
-                  <button
-                    type="button"
-                    onClick={() => copy(movement.id, 'id')}
-                    aria-label={copied === 'id' ? 'Número copiado' : 'Copiar número de operación'}
-                    className="m-0 grid size-11 shrink-0 place-items-center rounded-full border-0 bg-white p-0 text-[#4C1DB8] hover:bg-[#E9E5F6] dark:bg-[#140F24] dark:text-[#B9A6FF]"
-                  >
-                    {copied === 'id' ? <Check className="size-[18px]" aria-hidden="true" /> : <Copy className="size-[18px]" aria-hidden="true" />}
-                  </button>
-                </dd>
+              <div className="mt-1 flex items-center justify-between gap-3 rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] px-3.5 py-2.5 dark:border-[#261E3D] dark:bg-[#19122C]">
+                <div className="min-w-0">
+                  <dt className="text-[11px] font-medium tracking-wide text-[#8C87A3] uppercase dark:text-[#9D97B5]">
+                    N.º de operación
+                  </dt>
+                  <dd className="m-0 mt-0.5 font-mono text-xs font-semibold break-all text-[#1C1633] dark:text-[#F4F2FA]">
+                    {movement.id}
+                  </dd>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copy(movement.id, 'id')}
+                  aria-label={copied === 'id' ? 'Número copiado' : 'Copiar número de operación'}
+                  className="m-0 grid size-10 shrink-0 place-items-center rounded-full border-0 bg-white p-0 text-[#4C1DB8] shadow-xs transition-colors hover:bg-[#E9E5F6] dark:bg-[#241B3E] dark:text-[#FFD54A] dark:hover:bg-[#2F2450]"
+                >
+                  {copied === 'id' ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+                </button>
               </div>
             </dl>
 
-            <button type="button" onClick={share} className={`${secondaryActionClass} mt-5 inline-flex items-center justify-center gap-2`}>
+            <button
+              type="button"
+              onClick={share}
+              className={`${secondaryActionClass} mt-6 inline-flex items-center justify-center gap-2`}
+            >
               <Share2 className="size-[18px]" aria-hidden="true" />
               {copied === 'receipt' ? 'Comprobante copiado' : 'Compartir comprobante'}
             </button>
@@ -117,8 +166,8 @@ export default function MovementReceipt({ movement, onClose }) {
 function ReceiptRow({ label, children }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <dt className="text-[#8C87A3] dark:text-[#9D97B5]">{label}</dt>
-      <dd className="m-0 text-right font-medium">{children}</dd>
+      <dt className="text-[#6E6888] dark:text-[#9D97B5]">{label}</dt>
+      <dd className="m-0 text-right font-medium text-[#1C1633] dark:text-[#F4F2FA]">{children}</dd>
     </div>
   );
 }
