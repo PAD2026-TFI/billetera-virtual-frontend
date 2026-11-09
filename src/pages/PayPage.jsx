@@ -180,6 +180,15 @@ function Scanner({ onScan }) {
   }
 
   useEffect(() => {
+    if (cameraActive && streamRef.current && videoRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraActive]);
+
+  useEffect(() => {
     startCamera();
     return () => {
       stopCamera();
@@ -250,15 +259,15 @@ function Scanner({ onScan }) {
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,213,74,0.12)_0%,transparent_68%)]"
         />
 
-        {cameraActive ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="absolute inset-0 size-full object-cover"
-          />
-        ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`absolute inset-0 size-full object-cover ${cameraActive ? '' : 'hidden'}`}
+        />
+
+        {!cameraActive && (
           <div className="relative z-10 grid place-items-center gap-3 text-center">
             <span className="grid size-20 place-items-center rounded-3xl bg-white/8 text-[#FFD54A] ring-1 ring-inset ring-white/15">
               <QrCode className="size-10 stroke-[1.8]" aria-hidden="true" />
