@@ -9,6 +9,7 @@ const ACTIVE_ACCOUNT_TYPE_KEY = 'padi_account_type_active';
 export const isMerchantUser = user => {
   if (!user) return false;
   if (user.accountType === 'merchant') return true;
+  if (user.accountType === 'personal') return false;
   if (typeof window === 'undefined') return false;
   const idKey = user.id ? String(user.id).trim().toLowerCase() : null;
   const emailKey = user.email ? String(user.email).trim().toLowerCase() : null;
@@ -74,7 +75,9 @@ export const useAuthStore = create((set, get) => ({
         isMerchantUser(user) ||
         (emailKey && isMerchantUser({ email: emailKey })) ||
         (user?.id && isMerchantUser({ id: user.id }));
-      const accountType = isExplicitMerchant || isStoredMerchant ? 'merchant' : 'personal';
+      const accountType = ['merchant', 'personal'].includes(user.accountType)
+        ? user.accountType
+        : isExplicitMerchant || isStoredMerchant ? 'merchant' : 'personal';
 
       if (accountType === 'merchant') {
         setStoredAccountType(null, 'merchant');
@@ -116,10 +119,14 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  setAccountType: (accountType) => {
+  setAccountType: async (accountType) => {
     const { session } = get();
-    setStoredAccountType(null, accountType);
     if (!session?.user) return;
+    if (session.token !== 'mock-jwt-token') {
+      await api('/api/v1/me/account-type', { method: 'PUT', body: { accountType }, token: session.token });
+    }
+    if (get().session?.token !== session.token) return;
+    setStoredAccountType(null, accountType);
     if (session.user.id) setStoredAccountType(session.user.id, accountType);
     if (session.user.email) setStoredAccountType(session.user.email, accountType);
     const updated = {
