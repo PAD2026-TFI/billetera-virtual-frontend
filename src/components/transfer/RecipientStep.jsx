@@ -1,45 +1,56 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowRight, Check, Loader2, Pencil, Search, Trash2, X } from 'lucide-react';
-import { IconInput } from '@/components/auth/IconInput';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  ArrowRight,
+  Check,
+  Loader2,
+  Pencil,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+import { IconInput } from "@/components/auth/IconInput";
 import {
   alertClass,
   fieldInputClass,
   primaryActionClass,
   secondaryActionClass,
-} from '@/components/forms/formStyles';
-import { frequentContacts as initialFrequentContacts, lookupRecipient } from '@/services/mocks/walletService';
-import RecipientCard from './RecipientCard';
+} from "@/components/forms/formStyles";
+import {
+  frequentContacts as initialFrequentContacts,
+  lookupRecipient,
+} from "@/services/mocks/walletService";
+import RecipientCard from "./RecipientCard";
 
 const destinationSchema = z.object({
   destination: z
     .string()
     .trim()
-    .min(1, 'Ingresá un alias, CVU o CBU.')
+    .min(1, "Ingresá un alias, CVU o CBU.")
     .refine(
-      value => /^\d{22}$/.test(value) || /^[a-zA-Z0-9.-]{6,20}$/.test(value),
-      'El alias tiene de 6 a 20 caracteres; el CVU y el CBU, 22 números.'
+      (value) => /^\d{22}$/.test(value) || /^[a-zA-Z0-9.-]{6,20}$/.test(value),
+      "El alias tiene de 6 a 20 caracteres; el CVU y el CBU, 22 números.",
     ),
 });
 
-function initialsFrom(name = '') {
+function initialsFrom(name = "") {
   return name
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map(part => part[0]?.toUpperCase())
-    .join('');
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 }
 
 export default function RecipientStep({ account, onConfirm }) {
   const [frequentList, setFrequentList] = useState(initialFrequentContacts);
   const [editingDestination, setEditingDestination] = useState(null);
-  const [editName, setEditName] = useState('');
+  const [editName, setEditName] = useState("");
   const [recipient, setRecipient] = useState(null);
   const [searching, setSearching] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const {
     register,
@@ -48,37 +59,41 @@ export default function RecipientStep({ account, onConfirm }) {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(destinationSchema),
-    mode: 'onTouched',
+    mode: "onTouched",
   });
 
   async function search(destination) {
     const key = destination.trim().toLowerCase();
     setRecipient(null);
-    setError('');
+    setError("");
     if (key === account.alias?.toLowerCase() || key === account.cvu) {
-      setError('No podés transferirte a tu propia cuenta.');
+      setError("No podés transferirte a tu propia cuenta.");
       return;
     }
     setSearching(true);
     try {
       const found = await lookupRecipient(key);
       if (found) setRecipient(found);
-      else setError('No encontramos una cuenta con ese alias, CVU o CBU.');
+      else setError("No encontramos una cuenta con ese alias, CVU o CBU.");
     } catch (err) {
-      setError(err?.message || 'No encontramos una cuenta con ese alias, CVU o CBU.');
+      setError(
+        err?.message || "No encontramos una cuenta con ese alias, CVU o CBU.",
+      );
     } finally {
       setSearching(false);
     }
   }
 
   function handleSelectFrequent(contact) {
-    setValue('destination', contact.destination);
+    setValue("destination", contact.destination);
     search(contact.destination);
   }
 
   function handleDeleteContact(e, destination) {
     e.stopPropagation();
-    setFrequentList(prev => prev.filter(c => c.destination !== destination));
+    setFrequentList((prev) =>
+      prev.filter((c) => c.destination !== destination),
+    );
     if (recipient?.destination === destination) {
       setRecipient(null);
     }
@@ -93,11 +108,13 @@ export default function RecipientStep({ account, onConfirm }) {
   function saveEditing(e, destination) {
     e.stopPropagation();
     if (editName.trim()) {
-      setFrequentList(prev =>
-        prev.map(c => (c.destination === destination ? { ...c, name: editName.trim() } : c))
+      setFrequentList((prev) =>
+        prev.map((c) =>
+          c.destination === destination ? { ...c, name: editName.trim() } : c,
+        ),
       );
       if (recipient?.destination === destination) {
-        setRecipient(prev => ({ ...prev, name: editName.trim() }));
+        setRecipient((prev) => ({ ...prev, name: editName.trim() }));
       }
     }
     setEditingDestination(null);
@@ -111,7 +128,7 @@ export default function RecipientStep({ account, onConfirm }) {
   return (
     <div className="m-0 flex min-h-0 flex-1 flex-col gap-4 border-0 bg-transparent p-0 animate-page-enter">
       <form
-        onSubmit={handleSubmit(values => search(values.destination))}
+        onSubmit={handleSubmit((values) => search(values.destination))}
         noValidate
         className="m-0 grid max-w-none gap-2 rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] p-3.5 dark:border-[#261E3D] dark:bg-[#19122C]"
       >
@@ -125,10 +142,10 @@ export default function RecipientStep({ account, onConfirm }) {
           <input
             id="destination"
             autoComplete="off"
-            placeholder="nombre.apellido.padi o 22 dígitos"
+            placeholder="Alias o CVU de 22 dígitos"
             className={`${fieldInputClass} h-11 w-full flex-1 bg-white px-4 dark:bg-[#120D20]`}
             aria-invalid={!!errors.destination}
-            {...register('destination')}
+            {...register("destination")}
           />
           <button
             type="submit"
@@ -157,7 +174,11 @@ export default function RecipientStep({ account, onConfirm }) {
             Verificando titularidad en la cámara compensadora…
           </p>
         )}
-        {error && <p role="alert" className={alertClass}>{error}</p>}
+        {error && (
+          <p role="alert" className={alertClass}>
+            {error}
+          </p>
+        )}
         {recipient && (
           <div className="grid gap-3 rounded-[22px] border border-emerald-500/25 bg-gradient-to-br from-emerald-50/70 via-white to-[#F4FBF8] p-3.5 dark:border-emerald-500/25 dark:from-emerald-950/35 dark:via-[#140F24] dark:to-[#0F1F1C] animate-page-enter">
             <RecipientCard recipient={recipient} />
@@ -193,7 +214,7 @@ export default function RecipientStep({ account, onConfirm }) {
           </p>
         ) : (
           <ul className="custom-scrollbar m-0 grid w-full min-h-0 flex-1 auto-rows-max grid-cols-1 list-none content-start gap-2 overflow-y-auto p-0">
-            {frequentList.map(contact => {
+            {frequentList.map((contact) => {
               const isEditing = editingDestination === contact.destination;
               const isSelected = recipient?.destination === contact.destination;
 
@@ -202,16 +223,16 @@ export default function RecipientStep({ account, onConfirm }) {
                   key={contact.destination}
                   className={`group relative flex h-15 w-full items-center justify-between gap-3 overflow-hidden rounded-2xl border px-4 py-2.5 transition-all duration-150 ${
                     isSelected
-                      ? 'border-[#4C1DB8] bg-[#F4F0FD] dark:border-[#FFD54A]/60 dark:bg-[#22193B]'
-                      : 'border-[#ECE9F5] bg-[#FAF9FE] hover:border-[#4C1DB8]/30 hover:bg-[#F5F2FC] dark:border-[#261E3D] dark:bg-[#19122C] dark:hover:border-[#3D335A] dark:hover:bg-[#21183A]'
+                      ? "border-[#4C1DB8] bg-[#F4F0FD] dark:border-[#FFD54A]/60 dark:bg-[#22193B]"
+                      : "border-[#ECE9F5] bg-[#FAF9FE] hover:border-[#4C1DB8]/30 hover:bg-[#F5F2FC] dark:border-[#261E3D] dark:bg-[#19122C] dark:hover:border-[#3D335A] dark:hover:bg-[#21183A]"
                   }`}
                 >
                   <span
                     aria-hidden="true"
                     className={`pointer-events-none absolute top-2.5 bottom-2.5 left-0 w-1 rounded-r-full transition-transform duration-150 ${
                       isSelected
-                        ? 'scale-y-100 bg-[#4C1DB8] dark:bg-[#FFD54A]'
-                        : 'scale-y-0 bg-[#4C1DB8] group-hover:scale-y-100 dark:bg-[#FFD54A]'
+                        ? "scale-y-100 bg-[#4C1DB8] dark:bg-[#FFD54A]"
+                        : "scale-y-0 bg-[#4C1DB8] group-hover:scale-y-100 dark:bg-[#FFD54A]"
                     }`}
                   />
 
@@ -220,13 +241,13 @@ export default function RecipientStep({ account, onConfirm }) {
                       <input
                         type="text"
                         value={editName}
-                        onChange={e => setEditName(e.target.value)}
+                        onChange={(e) => setEditName(e.target.value)}
                         className="h-8 min-w-0 flex-1 rounded-lg border border-[#5B2EE0] bg-white px-2.5 text-xs text-[#1C1633] focus:outline-none dark:bg-[#140F24] dark:text-[#F4F2FA]"
                         autoFocus
                       />
                       <button
                         type="button"
-                        onClick={e => saveEditing(e, contact.destination)}
+                        onClick={(e) => saveEditing(e, contact.destination)}
                         aria-label={`Guardar nombre de ${contact.name}`}
                         className="m-0 grid size-7 place-items-center rounded-lg border-0 bg-emerald-600 p-0 text-white hover:bg-emerald-700"
                       >
@@ -270,7 +291,7 @@ export default function RecipientStep({ account, onConfirm }) {
                       <div className="flex shrink-0 items-center gap-1 opacity-80 transition-opacity group-hover:opacity-100">
                         <button
                           type="button"
-                          onClick={e => startEditing(e, contact)}
+                          onClick={(e) => startEditing(e, contact)}
                           aria-label="Editar contacto"
                           className="m-0 grid size-8 place-items-center rounded-full border-0 bg-transparent p-0 text-[#8C87A3] hover:bg-[#ECE9F5] hover:text-[#4C1DB8] dark:text-[#9D97B5] dark:hover:bg-[#281F45] dark:hover:text-[#FFD54A]"
                         >
@@ -278,7 +299,9 @@ export default function RecipientStep({ account, onConfirm }) {
                         </button>
                         <button
                           type="button"
-                          onClick={e => handleDeleteContact(e, contact.destination)}
+                          onClick={(e) =>
+                            handleDeleteContact(e, contact.destination)
+                          }
                           aria-label="Eliminar contacto"
                           className="m-0 grid size-8 place-items-center rounded-full border-0 bg-transparent p-0 text-[#8C87A3] hover:bg-rose-100 hover:text-rose-600 dark:text-[#9D97B5] dark:hover:bg-rose-950/50 dark:hover:text-rose-400"
                         >
