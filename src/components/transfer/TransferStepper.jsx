@@ -29,12 +29,12 @@ export default function TransferStepper({ current }) {
               </div>
 
               <span
-                className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
+                className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold ${
                   isCurrent
                     ? 'text-[#1C1633] dark:text-[#F4F2FA]'
                     : isCompleted
-                    ? 'sr-only text-emerald-700 sm:not-sr-only sm:inline-flex dark:text-emerald-400'
-                    : 'sr-only text-[#8C87A3] sm:not-sr-only sm:inline-flex dark:text-[#6B6485]'
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : 'text-[#8C87A3] dark:text-[#6B6485]'
                 }`}
               >
                 <span

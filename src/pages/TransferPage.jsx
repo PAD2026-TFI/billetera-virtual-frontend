@@ -64,15 +64,15 @@ function TransferContent({ summary }) {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_350px] lg:items-stretch lg:gap-7">
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_350px] lg:items-stretch lg:gap-7">
       <section
         aria-label="Transferencia"
-        className={`m-0 flex h-full min-h-0 flex-1 flex-col justify-between gap-3 overflow-hidden p-4 sm:p-5 lg:flex lg:h-full lg:max-h-none lg:gap-6 lg:overflow-visible lg:p-7 ${panelClass}`}
+        className={`m-0 flex flex-col justify-between gap-4 p-4 sm:p-6 lg:gap-6 lg:p-7 ${panelClass}`}
       >
         <TransferStepper current={step} />
         {step < 3 && <h2 className={`${sectionTitleClass} m-0 tracking-tight`}>{stepTitles[step]}</h2>}
 
-        <div className="flex min-h-0 flex-1 flex-col justify-between overflow-hidden lg:overflow-visible">
+        <div className="flex flex-col justify-between gap-4">
           {step === 0 && (
             <RecipientStep
               account={summary.account}
@@ -263,7 +263,6 @@ function TransferContent({ summary }) {
 export default function TransferPage() {
   return (
     <AppLayout
-      fitViewportMobile
       header={() => (
         <PageHeader
           title="Transferir"
