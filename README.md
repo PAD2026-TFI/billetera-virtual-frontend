@@ -131,3 +131,11 @@ npm test
   - El detalle completo está en [`docs/ai-guidelines.md`](docs/ai-guidelines.md).
 - **Qué falta hacer:** está en [`docs/frontend-tasks.md`](docs/frontend-tasks.md).
 - **Despliegue:** el servidor estático tiene que devolver `index.html` en todas las rutas de navegación, para que funcionen al recargar.
+
+## Integraciones de vendedores
+
+La rama `feat/merchant-api-integration` agrega `/integraciones`, accesible desde el menú del vendedor y Mi perfil (también en móvil). Permite generar una API Key, copiarla, ocultarla, reemplazarla y revocarla. La clave completa se mantiene solo en estado React; no se guarda en localStorage/sessionStorage ni se incluye en los ejemplos de código. No hay modo simulado para generar credenciales reales.
+
+La modalidad Personal/Vendedor ahora se guarda con `PUT /api/v1/me/account-type`; cambiar a Personal revoca la clave activa. Al iniciar sesión, el perfil del servidor tiene prioridad sobre la modalidad histórica del navegador. Los vendedores anteriores deben activar la modalidad desde Mi perfil una vez después de la migración.
+
+Requiere el backend de la rama homónima y la migración `AddMerchantApiIntegration`, desplegados antes que este frontend. `VITE_API_BASE_URL` debe apuntar a ese backend; nunca poner API Keys en variables `VITE_*`. Los cobros iniciados por la integración aparecen en la misma pantalla Cobros del vendedor. La guía técnica inicial se encuentra en la pantalla Integraciones.

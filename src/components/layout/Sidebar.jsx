@@ -1,4 +1,4 @@
-import { ArrowLeftRight, CreditCard, Home, ListOrdered, LogOut, Moon, QrCode, Store, Sun, UserRound } from 'lucide-react';
+import { Plug, ArrowLeftRight, CreditCard, Home, ListOrdered, LogOut, Moon, QrCode, Store, Sun, UserRound } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Wordmark } from '@/components/auth/AuthLayout';
 import { routes, sectionFromPath } from '@/lib/routes';
@@ -20,7 +20,10 @@ export default function Sidebar() {
       { id: 'movements', label: 'Movimientos', icon: ListOrdered },
       { id: 'transfer', label: 'Transferir', icon: ArrowLeftRight },
       { id: 'pay', label: 'Pagar con QR', icon: QrCode },
-      ...(isMerchant ? [{ id: 'collections', label: 'Cobros', icon: Store }] : []),
+      ...(isMerchant ? [
+        { id: 'collections', label: 'Cobros', icon: Store },
+        { id: 'integrations', label: 'Integraciones', icon: Plug },
+      ] : []),
     ],
     [
       { id: 'card', label: 'Mi tarjeta', icon: CreditCard },

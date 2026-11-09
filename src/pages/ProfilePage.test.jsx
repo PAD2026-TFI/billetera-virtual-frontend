@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AppRoutes from '@/AppRoutes';
 import { resetWallet } from '@/test-utils';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -52,10 +52,13 @@ describe('Mi perfil', () => {
   it('permite activar modalidad vendedor y navegar a cobros', async () => {
     const user = userEvent.setup();
     renderAt('/perfil');
+    const request = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify({ accountType: 'merchant' }), { status: 200 }));
     const activateButton = await screen.findByRole('button', { name: 'Activar Vendedor' });
     await user.click(activateButton);
 
     expect(await screen.findByRole('button', { name: 'Pasar a Personal' })).toBeInTheDocument();
+    expect(request).toHaveBeenCalledWith(expect.stringContaining('/api/v1/me/account-type'), expect.objectContaining({ method: 'PUT', body: JSON.stringify({ accountType: 'merchant' }) }));
+    request.mockRestore();
     const goToCollections = screen.getByRole('button', { name: /ir a cobros/i });
     expect(goToCollections).toBeInTheDocument();
 
