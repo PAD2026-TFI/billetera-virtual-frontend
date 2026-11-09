@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
 import {
   Check,
   CheckCircle2,
@@ -26,8 +27,10 @@ import {
 import { formatCurrency, formatDateTime } from '@/lib/formatters';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/money';
 import { api, API_BASE } from '@/services/api';
+import { registerMockPaymentLink } from '@/services/mocks/checkoutService';
 import { isLiveSession } from '@/services/mocks/walletService';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
 import { useWalletStore } from '@/store/useWalletStore';
 
 function CollectionsContent({ summary }) {
@@ -42,22 +45,97 @@ function CollectionsContent({ summary }) {
   const [linksList, setLinksList] = useState([]);
   const [copiedToken, setCopiedToken] = useState(null);
   const [loadingList, setLoadingList] = useState(false);
+  const [mockQrUrl, setMockQrUrl] = useState('');
 
   useEffect(() => {
-    async function loadLinks() {
+    let cancelled = false;
+
+    async function loadLinks(showSpinner = false) {
       if (!isLiveSession()) return;
-      setLoadingList(true);
+      if (showSpinner) setLoadingList(true);
       try {
         const res = await api('/api/v1/me/merchant/payment-links');
+        if (cancelled) return;
         if (Array.isArray(res)) setLinksList(res);
       } catch {
-        // silent fail for non-blocking list
+        if (!cancelled) setLinksList([]);
       } finally {
-        setLoadingList(false);
+        if (!cancelled && showSpinner) setLoadingList(false);
       }
     }
-    loadLinks();
+
+    loadLinks(true);
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        loadLinks(false);
+      }
+    }, 3500);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!activeLink) return;
+    const isAlreadyPaid = activeLink.status === 'Paid' || activeLink.status === 'Completed';
+    if (isAlreadyPaid) return;
+
+    let cancelled = false;
+
+    async function checkPaymentStatus() {
+      if (document.hidden) return;
+      try {
+        if (isLiveSession()) {
+          const fresh = await api(`/api/v1/public/payment-links/${encodeURIComponent(activeLink.token)}`);
+          if (cancelled) return;
+          const isPaid =
+            fresh &&
+            (fresh.status === 'Paid' ||
+              fresh.status === 'Completed' ||
+              (!fresh.isPayable && fresh.status !== 'Active'));
+          if (isPaid) {
+            setActiveLink(prev => (prev ? { ...prev, status: 'Completed', isPayable: false } : null));
+            setLinksList(prev =>
+              prev.map(item => (item.token === activeLink.token ? { ...item, status: 'Completed' } : item))
+            );
+            useWalletStore.getState().loadSummary();
+            useNotificationStore.getState().notify({
+              title: '¡Cobro recibido con éxito!',
+              description: `${formatCurrency(activeLink.amount)} • ${activeLink.title}`,
+              type: 'success',
+            });
+          }
+        }
+      } catch {
+      }
+    }
+
+    const interval = setInterval(checkPaymentStatus, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [activeLink?.token, activeLink?.status]);
+
+  useEffect(() => {
+    if (!activeLink || isLiveSession()) {
+      setMockQrUrl('');
+      return;
+    }
+    const targetUrl = activeLink.checkoutUrl || `${window.location.origin}/checkout?token=${activeLink.token}`;
+    QRCode.toDataURL(targetUrl, {
+      width: 256,
+      margin: 1,
+      color: {
+        dark: '#1C1633',
+        light: '#FFFFFF',
+      },
+    })
+      .then(url => setMockQrUrl(url))
+      .catch(() => setMockQrUrl(''));
+  }, [activeLink]);
 
   async function handleCreateCollection(e) {
     e.preventDefault();
@@ -104,6 +182,7 @@ function CollectionsContent({ summary }) {
           createdAt: new Date().toISOString(),
           checkoutUrl: `${window.location.origin}/checkout?token=${token}`,
         };
+        registerMockPaymentLink(mockLink);
         setActiveLink(mockLink);
         setLinksList(prev => [mockLink, ...prev]);
       }
@@ -131,161 +210,220 @@ function CollectionsContent({ summary }) {
   const qrImageUrl = activeLink
     ? isLiveSession()
       ? `${API_BASE}/api/v1/public/payment-links/${activeLink.token}/qr`
-      : null
+      : mockQrUrl
     : null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-12">
-      <section className={`lg:col-span-5 ${panelClass} flex flex-col justify-between`}>
-          <div>
-            <div className="flex items-center gap-2 text-[#4C1DB8] dark:text-[#FFD54A]">
-              <Sparkles className="size-5" />
-              <h2 className={sectionTitleClass}>Nuevo cobro</h2>
-            </div>
-            <p className="mt-1 text-xs text-[#6E6888] dark:text-[#9D97B5]">
-              Generá un link de pago con código QR dinámico para cobrar a tus clientes.
-            </p>
-
-            {error && (
-              <p role="alert" className={`mt-3 ${alertClass}`}>
-                {error}
-              </p>
-            )}
-
-            <form onSubmit={handleCreateCollection} noValidate className="mt-4 grid gap-3.5">
-              <Field id="collection-amount" label="Importe a cobrar">
-                <MoneyInput
-                  id="collection-amount"
-                  value={amountInput}
-                  onChange={e => setAmountInput(formatMoneyInput(e.target.value))}
-                  placeholder="0,00"
-                />
-              </Field>
-
-              <Field id="collection-title" label="Concepto o producto">
-                <input
-                  id="collection-title"
-                  type="text"
-                  maxLength={100}
-                  placeholder="Ej. Remera oversize, Café especial..."
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  className={`${fieldInputClass} h-11 w-full bg-white px-4 dark:bg-[#120D20]`}
-                />
-              </Field>
-
-              <Field id="collection-description" label="Detalle adicional (opcional)">
-                <input
-                  id="collection-description"
-                  type="text"
-                  maxLength={160}
-                  placeholder="Ej. Talle L, Color Negro, Mesa 4"
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  className={`${fieldInputClass} h-11 w-full bg-white px-4 dark:bg-[#120D20]`}
-                />
-              </Field>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`${primaryActionClass} mt-2 inline-flex items-center justify-center gap-2`}
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Generando cobro…
-                  </>
-                ) : (
-                  <>
-                    <QrCode className="size-4" />
-                    Generar link y QR
-                  </>
-                )}
-              </button>
-            </form>
+    <div className="grid items-start gap-6 lg:grid-cols-12">
+      <section className={`lg:col-span-5 ${panelClass} flex flex-col gap-4`}>
+        <div>
+          <div className="flex items-center gap-2 text-[#4C1DB8] dark:text-[#FFD54A]">
+            <Sparkles className="size-5" />
+            <h2 className={sectionTitleClass}>Nuevo cobro</h2>
           </div>
+          <p className="mt-1 text-xs text-[#6E6888] dark:text-[#9D97B5]">
+            Generá un link de pago con código QR dinámico para cobrar a tus clientes.
+          </p>
 
-          <div className="mt-6 rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] p-3.5 text-xs text-[#6E6888] dark:border-[#261E3D] dark:bg-[#19122C] dark:text-[#9D97B5]">
-            <p className="m-0 flex items-center gap-2 font-semibold text-[#1C1633] dark:text-white">
-              <ShieldCheck className="size-4 text-emerald-500" />
-              Acreditación inmediata
+          {error && (
+            <p role="alert" className={`mt-3 ${alertClass}`}>
+              {error}
             </p>
-            <p className="mt-1 mb-0 text-[11px] leading-relaxed">
-              Los pagos recibidos se acreditan al instante en el saldo disponible de tu billetera padi.
-            </p>
-          </div>
-        </section>
+          )}
 
-        <section className={`lg:col-span-7 ${panelClass} flex flex-col gap-5`}>
-          {activeLink ? (
-            <div className="rounded-[24px] border border-[#5B2EE0]/30 bg-gradient-to-b from-[#FAF8FE] to-white p-5 text-center shadow-lg shadow-purple-950/5 dark:border-[#5B2EE0]/40 dark:from-[#1E1735] dark:to-[#140F24]">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                Esperando pago del cliente
-              </div>
+          <form onSubmit={handleCreateCollection} noValidate className="mt-4 grid gap-3.5">
+            <Field id="collection-amount" label="Importe a cobrar">
+              <MoneyInput
+                id="collection-amount"
+                value={amountInput}
+                onChange={e => setAmountInput(formatMoneyInput(e.target.value))}
+                placeholder="0,00"
+              />
+            </Field>
 
-              <p className="m-0 mt-3 font-mono text-[32px] font-bold text-[#1C1633] dark:text-white">
-                {formatCurrency(activeLink.amount)}
-              </p>
-              <p className="m-0 mt-1 text-sm font-semibold text-[#4C1DB8] dark:text-[#C4B2FF]">
-                {activeLink.title}
-              </p>
-              {activeLink.description && (
-                <p className="m-0 mt-0.5 text-xs text-[#6E6888] dark:text-[#9D97B5]">
-                  {activeLink.description}
-                </p>
+            <Field id="collection-title" label="Concepto o producto">
+              <input
+                id="collection-title"
+                type="text"
+                maxLength={100}
+                placeholder="Ej. Remera oversize, Café especial..."
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className={`${fieldInputClass} h-11 w-full bg-white px-4 dark:bg-[#120D20]`}
+              />
+            </Field>
+
+            <Field id="collection-description" label="Detalle adicional (opcional)">
+              <input
+                id="collection-description"
+                type="text"
+                maxLength={160}
+                placeholder="Ej. Talle L, Color Negro, Mesa 4"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                className={`${fieldInputClass} h-11 w-full bg-white px-4 dark:bg-[#120D20]`}
+              />
+            </Field>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className={`${primaryActionClass} mt-1 inline-flex items-center justify-center gap-2`}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Generando cobro…
+                </>
+              ) : (
+                <>
+                  <QrCode className="size-4" />
+                  Generar link y QR
+                </>
               )}
+            </button>
+          </form>
+        </div>
 
-              <div className="mx-auto my-4 grid size-52 place-items-center rounded-2xl border border-[#ECE9F5] bg-white p-3 shadow-md dark:border-[#261E3D] dark:bg-white">
-                {qrImageUrl ? (
-                  <img
-                    src={qrImageUrl}
-                    alt="Código QR de cobro"
-                    className="size-full object-contain"
-                  />
+        <div className="rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] p-3 text-xs text-[#6E6888] dark:border-[#261E3D] dark:bg-[#19122C] dark:text-[#9D97B5]">
+          <p className="m-0 flex items-center gap-2 font-semibold text-[#1C1633] dark:text-white">
+            <ShieldCheck className="size-4 text-emerald-500" />
+            Acreditación inmediata
+          </p>
+          <p className="mt-1 mb-0 text-[11px] leading-relaxed">
+            Los pagos recibidos se acreditan al instante en el saldo disponible de tu billetera padi.
+          </p>
+        </div>
+      </section>
+
+      <section className={`lg:col-span-7 ${panelClass} flex flex-col gap-4`}>
+        {activeLink ? (
+          (() => {
+            const isActivePaid = activeLink.status === 'Paid' || activeLink.status === 'Completed';
+            return (
+              <div
+                className={`rounded-[24px] border p-5 text-center shadow-lg transition-all ${
+                  isActivePaid
+                    ? 'border-emerald-500/40 bg-gradient-to-b from-emerald-50/60 to-white dark:border-emerald-500/30 dark:from-emerald-950/30 dark:to-[#140F24]'
+                    : 'border-[#5B2EE0]/30 bg-gradient-to-b from-[#FAF8FE] to-white dark:border-[#5B2EE0]/40 dark:from-[#1E1735] dark:to-[#140F24]'
+                }`}
+              >
+                {isActivePaid ? (
+                  <>
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3.5 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/25 dark:text-emerald-300">
+                      <CheckCircle2 className="size-4 text-emerald-500" />
+                      ¡Cobro recibido con éxito!
+                    </div>
+
+                    <p className="m-0 mt-3 font-mono text-[34px] font-bold text-emerald-600 dark:text-emerald-400">
+                      +{formatCurrency(activeLink.amount)}
+                    </p>
+                    <p className="m-0 mt-1 text-base font-semibold text-[#1C1633] dark:text-white">
+                      {activeLink.title}
+                    </p>
+                    <p className="mt-1 mb-0 text-xs text-[#6E6888] dark:text-[#9D97B5]">
+                      El cliente completó el pago. El dinero ya está acreditado en tu cuenta padi.
+                    </p>
+
+                    <div className="mx-auto my-4 grid size-24 place-items-center rounded-3xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                      <CheckCircle2 className="size-12 stroke-[2.2]" />
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveLink(null)}
+                        className={`${secondaryActionClass} inline-flex items-center justify-center gap-2`}
+                      >
+                        Cerrar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveLink(null);
+                          setAmountInput('');
+                          setTitle('');
+                          setDescription('');
+                        }}
+                        className={`${primaryActionClass} inline-flex items-center justify-center gap-2`}
+                      >
+                        <Plus className="size-4" />
+                        Nuevo cobro
+                      </button>
+                    </div>
+                  </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-2 p-2 text-center text-[#1C1633]">
-                    <QrCode className="size-28 text-[#4C1DB8]" />
-                    <span className="font-mono text-[10px] text-[#6E6888]">
-                      {activeLink.token}
-                    </span>
-                  </div>
+                  <>
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                      <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Esperando pago del cliente
+                    </div>
+
+                    <p className="m-0 mt-2.5 font-mono text-[30px] font-bold text-[#1C1633] dark:text-white">
+                      {formatCurrency(activeLink.amount)}
+                    </p>
+                    <p className="m-0 mt-0.5 text-sm font-semibold text-[#4C1DB8] dark:text-[#C4B2FF]">
+                      {activeLink.title}
+                    </p>
+                    {activeLink.description && (
+                      <p className="m-0 mt-0.5 text-xs text-[#6E6888] dark:text-[#9D97B5]">
+                        {activeLink.description}
+                      </p>
+                    )}
+
+                    <div className="mx-auto my-3 grid size-44 place-items-center rounded-2xl border border-[#ECE9F5] bg-white p-2.5 shadow-md dark:border-[#261E3D] dark:bg-white">
+                      {qrImageUrl ? (
+                        <img
+                          src={qrImageUrl}
+                          alt="Código QR de cobro"
+                          className="size-full object-contain"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-2 p-2 text-center text-[#1C1633]">
+                          <QrCode className="size-24 text-[#4C1DB8]" />
+                          <span className="font-mono text-[10px] text-[#6E6888]">
+                            {activeLink.token}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => copyLink(activeLink.token)}
+                        className={`${secondaryActionClass} inline-flex items-center justify-center gap-2`}
+                      >
+                        {copiedToken === activeLink.token ? (
+                          <>
+                            <Check className="size-4 text-emerald-500" />
+                            ¡Link copiado!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="size-4" />
+                            Copiar link
+                          </>
+                        )}
+                      </button>
+
+                      <a
+                        href={`/checkout?token=${activeLink.token}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`${primaryActionClass} inline-flex items-center justify-center gap-2`}
+                      >
+                        <ExternalLink className="size-4" />
+                        Abrir checkout
+                      </a>
+                    </div>
+                  </>
                 )}
               </div>
-
-              <div className="grid gap-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => copyLink(activeLink.token)}
-                  className={`${secondaryActionClass} inline-flex items-center justify-center gap-2`}
-                >
-                  {copiedToken === activeLink.token ? (
-                    <>
-                      <Check className="size-4 text-emerald-500" />
-                      ¡Link copiado!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="size-4" />
-                      Copiar link
-                    </>
-                  )}
-                </button>
-
-                <a
-                  href={`/checkout?token=${activeLink.token}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`${primaryActionClass} inline-flex items-center justify-center gap-2`}
-                >
-                  <ExternalLink className="size-4" />
-                  Abrir checkout
-                </a>
-              </div>
-            </div>
-          ) : (
-            <div className="grid place-items-center rounded-[24px] border border-dashed border-[#DFD9F0] bg-[#FAF9FE] p-8 text-center dark:border-[#2C2247] dark:bg-[#161028]">
+            );
+          })()
+        ) : (
+            <div className="grid place-items-center rounded-[24px] border border-dashed border-[#DFD9F0] bg-[#FAF9FE] p-6 text-center dark:border-[#2C2247] dark:bg-[#161028]">
               <span className="grid size-14 place-items-center rounded-2xl bg-[#EDE7FC] text-[#5B2EE0] dark:bg-[#281F45] dark:text-[#FFD54A]">
                 <QrCode className="size-7" />
               </span>
@@ -360,7 +498,7 @@ function CollectionsContent({ summary }) {
                             type="button"
                             onClick={() => copyLink(link.token)}
                             aria-label="Copiar link"
-                            className="grid size-9 place-items-center rounded-xl bg-[#F3F1F9] text-[#4C1DB8] transition-colors hover:bg-[#E9E5F6] dark:bg-[#231A3D] dark:text-[#FFD54A] dark:hover:bg-[#2B204A]"
+                            className="m-0 grid size-9 shrink-0 place-items-center rounded-xl border-0 bg-[#F3F1F9] p-0 text-[#4C1DB8] transition-colors hover:bg-[#E9E5F6] dark:bg-[#231A3D] dark:text-[#FFD54A] dark:hover:bg-[#2B204A]"
                           >
                             {copiedToken === link.token ? (
                               <Check className="size-4 text-emerald-500" />
@@ -373,7 +511,7 @@ function CollectionsContent({ summary }) {
                             type="button"
                             onClick={() => setActiveLink(link)}
                             aria-label="Ver código QR"
-                            className="grid size-9 place-items-center rounded-xl bg-[#F3F1F9] text-[#4C1DB8] transition-colors hover:bg-[#E9E5F6] dark:bg-[#231A3D] dark:text-[#FFD54A] dark:hover:bg-[#2B204A]"
+                            className="m-0 grid size-9 shrink-0 place-items-center rounded-xl border-0 bg-[#F3F1F9] p-0 text-[#4C1DB8] transition-colors hover:bg-[#E9E5F6] dark:bg-[#231A3D] dark:text-[#FFD54A] dark:hover:bg-[#2B204A]"
                           >
                             <QrCode className="size-4" />
                           </button>

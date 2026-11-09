@@ -39,6 +39,18 @@ const paymentLinks = {
 
 const expirations = new Map();
 
+export function registerMockPaymentLink(link) {
+  if (!link || !link.token) return;
+  paymentLinks[link.token] = {
+    title: link.title,
+    description: link.description || 'Cobro con pasarela padi.',
+    merchantName: link.merchantName || 'Comercio adherido padi.',
+    amount: link.amount,
+    status: link.status || 'Active',
+    ttlMinutes: 60,
+  };
+}
+
 export class CheckoutError extends Error {
   constructor(code, message) {
     super(message);
@@ -72,6 +84,8 @@ export async function fetchCheckoutLink(token) {
         status: details.status,
         expiresAt: details.expiresAt || minutesFromNow(30),
         isPayable: Boolean(details.isPayable),
+        merchantOwnerId: details.merchantOwnerId,
+        destinationWalletId: details.destinationWalletId,
       };
     } catch (error) {
       throw new CheckoutError(
