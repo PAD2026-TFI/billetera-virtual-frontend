@@ -281,3 +281,22 @@
     transform: none !important;
   }
 }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #F3F1F9 inset !important;
+  -webkit-text-fill-color: #1C1633 !important;
+  caret-color: #1C1633 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #1E1735 inset !important;
+  -webkit-text-fill-color: #F4F2FA !important;
+  caret-color: #F4F2FA !important;
+}

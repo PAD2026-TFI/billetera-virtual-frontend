@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, ShieldCheck, Wifi, Zap } from 'lucide-react';
+import { ArrowRight, Info, ShieldCheck, Wifi, Zap } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import coinImg from '../../assets/coin.webp';
@@ -84,7 +84,7 @@ export default function RegisterSuccessModal({
           <h2 className="m-0 text-[22px] font-bold tracking-tight text-[#2A0E7A] lg:text-[24px]">
             ¡Bienvenido a padi!
           </h2>
-          <p className="mt-1.5 mb-4 text-[13.5px] leading-relaxed text-[#4A4560]">
+          <p className="mt-1.5 mb-3.5 text-[13.5px] leading-relaxed text-[#4A4560]">
             Hola{' '}
             <strong className="font-semibold text-[#1C1633]">
               {firstName}
@@ -92,7 +92,7 @@ export default function RegisterSuccessModal({
             , tu billetera virtual ya está habilitada para enviar, recibir y transferir dinero.
           </p>
 
-          <div className="mb-5 grid grid-cols-2 gap-2 text-left">
+          <div className="mb-3 grid grid-cols-2 gap-2 text-left">
             <div className="rounded-xl bg-[#F3F1F9] p-2.5">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[#2A0E7A]">
                 <Zap className="size-3.5 text-[#5B2EE0]" />
@@ -112,6 +112,16 @@ export default function RegisterSuccessModal({
                 Fondos protegidos
               </p>
             </div>
+          </div>
+
+          <div className="mb-4 flex items-start gap-2.5 rounded-2xl border border-[#FFD54A]/60 bg-[#FFF9E5] px-3.5 py-2.5 text-left">
+            <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg bg-[#FFD54A]/35 text-[#7A5400]">
+              <Info className="size-3.5 stroke-[2.3]" aria-hidden="true" />
+            </span>
+            <p className="m-0 text-[11.5px] leading-snug text-[#5C4408]">
+              <strong className="font-semibold text-[#3D2C04]">Entorno de prueba:</strong>{' '}
+              padi. es una billetera virtual con fines académicos y demostrativos. No utiliza dinero real.
+            </p>
           </div>
 
           <Button
