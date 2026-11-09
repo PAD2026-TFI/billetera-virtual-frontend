@@ -8,6 +8,7 @@ import {
   Loader2,
   Pencil,
   Search,
+  Star,
   Trash2,
   X,
 } from "lucide-react";
@@ -19,9 +20,12 @@ import {
   secondaryActionClass,
 } from "@/components/forms/formStyles";
 import {
-  frequentContacts as initialFrequentContacts,
-  lookupRecipient,
-} from "@/services/mocks/walletService";
+  deleteFrequentContact,
+  getFrequentContacts,
+  saveFrequentContact,
+  updateContactName,
+} from "@/services/contactsService";
+import { lookupRecipient } from "@/services/mocks/walletService";
 import RecipientCard from "./RecipientCard";
 
 const destinationSchema = z.object({
@@ -36,21 +40,36 @@ const destinationSchema = z.object({
 });
 
 function initialsFrom(name = "") {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
+  const letters = String(name || "").replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "").trim();
+  const parts = letters.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  if (parts.length === 1 && parts[0].length >= 2) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  if (parts.length === 1) {
+    return parts[0][0].toUpperCase();
+  }
+  return "PD";
 }
 
 export default function RecipientStep({ account, onConfirm }) {
-  const [frequentList, setFrequentList] = useState(initialFrequentContacts);
+  const [frequentList, setFrequentList] = useState(() => getFrequentContacts());
   const [editingDestination, setEditingDestination] = useState(null);
   const [editName, setEditName] = useState("");
   const [recipient, setRecipient] = useState(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
+
+  const isSavedFrequent = Boolean(
+    recipient &&
+      frequentList.some(
+        (c) =>
+          c.destination?.trim().toLowerCase() ===
+          recipient.destination?.trim().toLowerCase(),
+      ),
+  );
 
   const {
     register,
@@ -73,12 +92,26 @@ export default function RecipientStep({ account, onConfirm }) {
     setSearching(true);
     try {
       const found = await lookupRecipient(key);
-      if (found) setRecipient(found);
-      else setError("No encontramos una cuenta con ese alias, CVU o CBU.");
+      if (found) {
+        setRecipient(found);
+      } else {
+        const fromList = frequentList.find(
+          (c) => c.destination?.trim().toLowerCase() === key,
+        );
+        if (fromList) setRecipient(fromList);
+        else setError("No encontramos una cuenta con ese alias, CVU o CBU.");
+      }
     } catch (err) {
-      setError(
-        err?.message || "No encontramos una cuenta con ese alias, CVU o CBU.",
+      const fromList = frequentList.find(
+        (c) => c.destination?.trim().toLowerCase() === key,
       );
+      if (fromList) {
+        setRecipient(fromList);
+      } else {
+        setError(
+          err?.message || "No encontramos una cuenta con ese alias, CVU o CBU.",
+        );
+      }
     } finally {
       setSearching(false);
     }
@@ -86,14 +119,25 @@ export default function RecipientStep({ account, onConfirm }) {
 
   function handleSelectFrequent(contact) {
     setValue("destination", contact.destination);
-    search(contact.destination);
+    setRecipient(contact);
+    setError("");
+  }
+
+  function handleToggleFrequent() {
+    if (!recipient) return;
+    if (isSavedFrequent) {
+      const next = deleteFrequentContact(recipient.destination);
+      setFrequentList(next);
+    } else {
+      const next = saveFrequentContact(recipient);
+      setFrequentList(next);
+    }
   }
 
   function handleDeleteContact(e, destination) {
     e.stopPropagation();
-    setFrequentList((prev) =>
-      prev.filter((c) => c.destination !== destination),
-    );
+    const next = deleteFrequentContact(destination);
+    setFrequentList(next);
     if (recipient?.destination === destination) {
       setRecipient(null);
     }
@@ -108,11 +152,8 @@ export default function RecipientStep({ account, onConfirm }) {
   function saveEditing(e, destination) {
     e.stopPropagation();
     if (editName.trim()) {
-      setFrequentList((prev) =>
-        prev.map((c) =>
-          c.destination === destination ? { ...c, name: editName.trim() } : c,
-        ),
-      );
+      const next = updateContactName(destination, editName);
+      setFrequentList(next);
       if (recipient?.destination === destination) {
         setRecipient((prev) => ({ ...prev, name: editName.trim() }));
       }
@@ -182,6 +223,27 @@ export default function RecipientStep({ account, onConfirm }) {
         {recipient && (
           <div className="grid gap-3 rounded-[22px] border border-emerald-500/25 bg-gradient-to-br from-emerald-50/70 via-white to-[#F4FBF8] p-3.5 dark:border-emerald-500/25 dark:from-emerald-950/35 dark:via-[#140F24] dark:to-[#0F1F1C] animate-page-enter">
             <RecipientCard recipient={recipient} />
+            <div className="flex items-center justify-between px-1">
+              <button
+                type="button"
+                onClick={handleToggleFrequent}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4C1DB8] transition-colors hover:text-[#3D1499] dark:text-[#FFD54A] dark:hover:text-[#FFE664]"
+              >
+                <Star
+                  className={`size-4 ${
+                    isSavedFrequent
+                      ? "fill-[#FFD54A] text-[#FFD54A] dark:fill-[#FFD54A]"
+                      : "text-[#8C87A3] dark:text-[#9D97B5]"
+                  }`}
+                  aria-hidden="true"
+                />
+                <span>
+                  {isSavedFrequent
+                    ? "Guardado en contactos frecuentes"
+                    : "Guardar en contactos frecuentes"}
+                </span>
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => onConfirm(recipient)}
@@ -209,9 +271,14 @@ export default function RecipientStep({ account, onConfirm }) {
         </div>
 
         {frequentList.length === 0 ? (
-          <p className="m-0 rounded-2xl border border-dashed border-[#DFD9F0] bg-[#FAF9FE] p-4 text-center text-xs text-[#8C87A3] dark:border-[#2C2247] dark:bg-[#18122B]/60 dark:text-[#9D97B5]">
-            No tenés contactos frecuentes guardados.
-          </p>
+          <div className="m-0 rounded-2xl border border-dashed border-[#DFD9F0] bg-[#FAF9FE] p-5 text-center dark:border-[#2C2247] dark:bg-[#18122B]/60">
+            <p className="m-0 text-xs font-semibold text-[#6E6888] dark:text-[#C4B2FF]">
+              No tenés contactos frecuentes guardados.
+            </p>
+            <p className="m-0 mt-1 text-[11px] text-[#8C87A3] dark:text-[#9D97B5]">
+              Tus destinatarios se guardarán automáticamente al transferirles o podés marcarlos con la estrella.
+            </p>
+          </div>
         ) : (
           <ul className="custom-scrollbar m-0 grid w-full min-h-0 flex-1 auto-rows-max grid-cols-1 list-none content-start gap-2 overflow-y-auto p-0">
             {frequentList.map((contact) => {
