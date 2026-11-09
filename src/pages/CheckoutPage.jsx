@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs } from 'radix-ui';
-import { CreditCard, Link2Off, Lock, Wallet, XCircle } from 'lucide-react';
+import { AlertCircle, CreditCard, Link2Off, Lock, Wallet, XCircle } from 'lucide-react';
 import '@fontsource/poppins/400.css';
 import '@fontsource/poppins/600.css';
 import '@fontsource/poppins/700.css';
@@ -25,14 +25,26 @@ const closedLinkMessages = {
 };
 
 const cardContainerClass =
-  'rounded-[28px] border border-[#ECE9F5] bg-white p-6 shadow-[0_20px_50px_rgba(76,29,184,0.06)] dark:border-[#261E3D] dark:bg-[#140F24] dark:shadow-[0_0_40px_rgba(91,46,224,0.12)] sm:p-8 flex h-full flex-col justify-between';
+  'rounded-[28px] border border-[#ECE9F5] bg-white p-6 shadow-[0_20px_50px_rgba(76,29,184,0.06)] dark:border-[#261E3D] dark:bg-[#140F24] dark:shadow-[0_0_40px_rgba(91,46,224,0.12)] sm:p-7 flex flex-col gap-6';
 
 function CheckoutShell({ children }) {
+  const session = useAuthStore(state => state.session);
+  const signedIn = hasActiveSession(session);
+  const user = session?.user;
+
   return (
     <div className="min-h-svh bg-[#F1EEFA] font-[Poppins] text-[#1C1633] transition-colors dark:bg-[#090613] dark:text-[#F4F2FA]">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-6 sm:px-8">
         <Wordmark className="dark:text-white" />
-        <ThemeToggle />
+        <div className="flex items-center gap-3">
+          {signedIn && user && (
+            <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#ECE9F5] bg-white px-3 py-1.5 text-xs font-semibold text-[#1C1633] shadow-xs dark:border-[#261E3D] dark:bg-[#140F24] dark:text-[#F4F2FA]">
+              <span className="size-2 rounded-full bg-emerald-500" />
+              <span>{user.name || user.email}</span>
+            </div>
+          )}
+          <ThemeToggle />
+        </div>
       </header>
       <div role="main" className="mx-auto w-full max-w-5xl px-5 pb-12 sm:px-8">{children}</div>
     </div>
@@ -83,11 +95,22 @@ function Receipt({ link, receipt }) {
 export default function CheckoutPage() {
   const token = useSearchParams()[0].get('token') ?? '';
   const payQr = useWalletStore(state => state.payQr);
+  const session = useAuthStore(state => state.session);
+  const signedIn = hasActiveSession(session);
+  const user = session?.user;
+  const summary = useWalletStore(state => state.summary);
   const [link, setLink] = useState(null);
   const [state, setState] = useState('loading');
   const [method, setMethod] = useState('wallet');
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState('');
+
+  const isOwnLink = Boolean(
+    signedIn &&
+      link &&
+      ((link.merchantOwnerId && user?.id && link.merchantOwnerId === user.id) ||
+        (link.destinationWalletId && summary?.account?.id && link.destinationWalletId === summary.account.id))
+  );
 
   const load = useCallback(async () => {
     setState('loading');
@@ -145,7 +168,7 @@ export default function CheckoutPage() {
   return (
     <CheckoutShell>
       <h1 className="sr-only">Pagar a {link.merchantName}</h1>
-      <div className="mx-auto grid max-w-5xl grid-cols-1 items-stretch gap-8 lg:grid-cols-2">
+      <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-8 lg:grid-cols-2">
         <div className={cardContainerClass}>
           <OrderSummary link={link} onExpire={expire} />
         </div>
@@ -166,8 +189,19 @@ export default function CheckoutPage() {
             </div>
 
             {link.isPayable ? (
-              <>
-                {error && (
+              isOwnLink ? (
+                <div role="alert" className="grid gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+                  <div className="flex items-center gap-2.5 font-semibold text-amber-800 dark:text-amber-300">
+                    <AlertCircle className="size-5 shrink-0" aria-hidden="true" />
+                    <span>Cobro propio</span>
+                  </div>
+                  <p className="m-0 leading-relaxed">
+                    No podés pagar un cobro generado por tu propia cuenta. Compartí el link o código QR con tus clientes para recibir el pago.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {error && (
                   <div role="alert" className="grid gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
                     <p className="m-0 flex items-start gap-2 font-semibold">
                       <XCircle className="mt-0.5 size-4.5 shrink-0" aria-hidden="true" />
@@ -186,7 +220,7 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <Tabs.Root value={method} onValueChange={chooseMethod} className="flex flex-1 flex-col justify-between gap-6">
+                <Tabs.Root value={method} onValueChange={chooseMethod} className="flex flex-col gap-6">
                   <Tabs.List aria-label="Medio de pago" className="flex gap-1.5 rounded-full border border-[#ECE9F5] bg-[#F3F1F9] p-1.5 dark:border-[#261E3D] dark:bg-[#1E1735]">
                     <Tabs.Trigger
                       value="wallet"
@@ -212,7 +246,7 @@ export default function CheckoutPage() {
                   </Tabs.Content>
                 </Tabs.Root>
               </>
-            ) : (
+            )) : (
               <p role="status" className="m-0 rounded-2xl border border-[#ECE9F5] bg-[#F3F1F9] p-5 text-sm font-medium text-[#4A4560] dark:border-[#261E3D] dark:bg-[#1E1735] dark:text-[#9D97B5]">
                 {closedLinkMessages[link.status] ?? 'Este link ya no admite pagos.'}
               </p>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, Plus, Receipt, ShoppingBag } from 'lucide-react';
-import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
+import { formatCurrency, formatDate } from '@/lib/formatters';
 import MovementReceipt from '@/components/movements/MovementReceipt';
 import { iconTone } from '@/components/movements/MovementRow';
 
@@ -28,8 +28,6 @@ const statusLabels = {
       'bg-[#FFF4CC] text-[#7A5400] ring-1 ring-inset ring-amber-400/40 dark:bg-amber-950/50 dark:text-[#FFD54A] dark:ring-amber-400/30',
   },
 };
-
-const rowGrid = 'xl:grid xl:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] xl:items-center xl:gap-3';
 
 export default function RecentMovements({
   movements,
@@ -83,12 +81,10 @@ export default function RecentMovements({
         <div className="overflow-hidden rounded-[22px] border border-[#ECE9F5] bg-white p-1.5 lg:border-[#ECE9F5]/90 lg:bg-[#FCFBFD] dark:border-[#261E3D] dark:bg-[#140F24] lg:dark:bg-[#110C1F]/60">
           <div
             aria-hidden="true"
-            className={`hidden border-b border-[#ECE9F5] px-4 py-2.5 text-[11px] font-semibold tracking-wider text-[#6E6888] uppercase dark:border-[#261E3D] dark:text-[#8C87A3] ${rowGrid}`}
+            className="flex items-center justify-between border-b border-[#ECE9F5] px-4 py-2.5 text-[11px] font-semibold tracking-wider text-[#6E6888] uppercase dark:border-[#261E3D] dark:text-[#8C87A3]"
           >
             <span>Operación</span>
-            <span>Fecha</span>
-            <span className="text-right">Monto</span>
-            <span className="text-right">Estado</span>
+            <span>Monto y estado</span>
           </div>
 
           <ul className="m-0 list-none divide-y divide-[#F1EEF9] p-0 dark:divide-[#201836]">
@@ -109,7 +105,7 @@ export default function RecentMovements({
                     }}
                     role="button"
                     tabIndex={0}
-                    className={`relative flex cursor-pointer items-center gap-3.5 rounded-2xl px-3 py-3.5 transition-all duration-150 hover:bg-[#F5F2FC] focus-visible:ring-2 focus-visible:ring-[#5B2EE0]/40 focus-visible:outline-none xl:px-4 dark:hover:bg-[#1B1430] ${rowGrid}`}
+                    className="relative flex cursor-pointer items-center justify-between gap-3.5 rounded-2xl px-3 py-3.5 transition-all duration-150 hover:bg-[#F5F2FC] focus-visible:ring-2 focus-visible:ring-[#5B2EE0]/40 focus-visible:outline-none sm:px-4 dark:hover:bg-[#1B1430]"
                   >
                     <span
                       aria-hidden="true"
@@ -120,7 +116,7 @@ export default function RecentMovements({
 
                     <div className="flex min-w-0 flex-1 items-center gap-3.5">
                       <span
-                        className={`grid size-11 shrink-0 place-items-center rounded-2xl transition-transform duration-150 group-hover/row:scale-[1.03] xl:size-10 ${iconTone(
+                        className={`grid size-11 shrink-0 place-items-center rounded-2xl transition-transform duration-150 group-hover/row:scale-[1.03] sm:size-10 ${iconTone(
                           movement.kind,
                           isIncome
                         )}`}
@@ -131,46 +127,39 @@ export default function RecentMovements({
                         <p className="m-0 truncate text-[15px] leading-snug font-semibold tracking-[-0.01em] text-[#1C1633] dark:text-[#F4F2FA]">
                           {movement.title}
                         </p>
-                        <p className="m-0 mt-0.5 truncate text-xs text-[#6E6888] dark:text-[#9D97B5]">
-                          <span className="xl:hidden">
-                            <time dateTime={movement.createdAt} className="font-mono font-medium">
-                              {formatDateTime(movement.createdAt)}
-                            </time>
-                            {movement.status === 'pending' && (
-                              <span className="ml-1.5 inline-flex items-center gap-1 font-semibold text-[#7A5400] dark:text-[#FFD54A]">
-                                <span aria-hidden="true" className="size-1.5 rounded-full bg-amber-500 dark:bg-[#FFD54A]" />
-                                Pendiente
-                              </span>
-                            )}
-                          </span>
-                          <span className="hidden truncate xl:inline">{movement.detail}</span>
+                        <p className="m-0 mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[#6E6888] dark:text-[#9D97B5]">
+                          <time dateTime={movement.createdAt} className="font-mono font-medium text-[#4A4560] dark:text-[#B5AFCC]">
+                            {formatDate(movement.createdAt)}, {formatTime(movement.createdAt)} hs
+                          </time>
+                          {movement.detail && (
+                            <>
+                              <span aria-hidden="true" className="size-1 rounded-full bg-[#CBC5DF] dark:bg-[#3D335A]" />
+                              <span className="truncate">{movement.detail}</span>
+                            </>
+                          )}
                         </p>
                       </div>
                     </div>
 
-                    <time
-                      dateTime={movement.createdAt}
-                      className="hidden font-mono text-xs leading-tight font-medium text-[#4A4560] tabular-nums xl:block dark:text-[#B5AFCC]"
-                    >
-                      {formatDate(movement.createdAt)}
-                      <span className="mt-0.5 block text-[11px] text-[#8C87A3] dark:text-[#6B6485]">
-                        {formatTime(movement.createdAt)} hs
+                    <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                      <span
+                        className={`font-mono text-[15px] font-bold tracking-tight tabular-nums sm:text-base ${
+                          isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#1C1633] dark:text-[#F4F2FA]'
+                        }`}
+                      >
+                        {isIncome ? '+' : '−'}{formatCurrency(Math.abs(movement.amount))}
                       </span>
-                    </time>
-
-                    <span
-                      className={`shrink-0 text-right font-mono text-[15px] font-bold tracking-tight tabular-nums sm:text-base ${
-                        isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#1C1633] dark:text-[#F4F2FA]'
-                      }`}
-                    >
-                      {isIncome ? '+' : '−'}{formatCurrency(Math.abs(movement.amount))}
-                    </span>
-
-                    <span className="hidden justify-end xl:flex">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${status.className}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${status.className}`}>
                         <span aria-hidden="true" className={`size-1.5 rounded-full ${status.dotClass}`} />
                         {status.text}
                       </span>
+                    </div>
+
+                    <span
+                      aria-hidden="true"
+                      className="hidden size-7 shrink-0 place-items-center rounded-full bg-transparent text-[#ABA6C2] transition-all duration-150 group-hover/row:translate-x-0.5 group-hover/row:bg-[#ECE7FA] group-hover/row:text-[#4C1DB8] sm:grid dark:group-hover/row:bg-[#261E3D] dark:group-hover/row:text-[#FFD54A]"
+                    >
+                      <ChevronRight className="size-4" />
                     </span>
                   </div>
                 </li>

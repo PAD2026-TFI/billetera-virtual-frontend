@@ -300,3 +300,48 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: #F4F2FA !important;
   caret-color: #F4F2FA !important;
 }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(76, 29, 184, 0.25) transparent;
+}
+
+.dark * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(91, 46, 224, 0.35) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(76, 29, 184, 0.2);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(76, 29, 184, 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(91, 46, 224, 0.35);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(91, 46, 224, 0.6);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
