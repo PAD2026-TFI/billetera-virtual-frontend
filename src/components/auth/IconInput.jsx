@@ -9,7 +9,7 @@ export function IconInput({ icon: Icon, valid = false, className = '', ...props 
       {Icon && (
         <Icon
           className={cn(
-            'pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 transition-colors',
+            'pointer-events-none absolute top-1/2 left-4 z-10 size-[18px] -translate-y-1/2 transition-colors',
             valid ? 'text-emerald-600' : 'text-[#9C96B5]'
           )}
         />
@@ -32,7 +32,7 @@ export function PasswordInput({ icon: Icon, valid = false, className = '', ...pr
       {Icon && (
         <Icon
           className={cn(
-            'pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 transition-colors',
+            'pointer-events-none absolute top-1/2 left-4 z-10 size-[18px] -translate-y-1/2 transition-colors',
             valid ? 'text-emerald-600' : 'text-[#9C96B5]'
           )}
         />
@@ -50,7 +50,7 @@ export function PasswordInput({ icon: Icon, valid = false, className = '', ...pr
         type="button"
         onClick={() => setVisible(v => !v)}
         aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-        className="absolute inset-y-0 right-0 m-0 grid w-12 place-items-center rounded-r-xl border-0 bg-transparent p-0 text-[#9C96B5] hover:text-[#4C1DB8]"
+        className="absolute inset-y-0 right-0 z-10 m-0 grid w-12 place-items-center rounded-r-xl border-0 bg-transparent p-0 text-[#9C96B5] hover:text-[#4C1DB8]"
       >
         {visible ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
       </button>
