@@ -74,6 +74,27 @@ export function mapBackendMovement(item) {
   const rawAmount = Number(item.amount) || 0;
   const amount = isCredit ? rawAmount : -rawAmount;
   const refCode = String(item.sourceId || item.id || '').slice(0, 8).toUpperCase();
+  const counterparty = item.counterpartyName || item.counterpartyAlias;
+
+  if (item.isPayment || item.concept) {
+    const concept = item.concept || (isCredit ? 'Cobro recibido' : 'Pago en comercio');
+    const title = isCredit
+      ? (counterparty ? `Cobro de ${counterparty}` : (item.concept || 'Cobro recibido'))
+      : (counterparty ? `Pago a ${counterparty}` : (item.concept || 'Pago en comercio'));
+
+    return {
+      id: item.id,
+      kind: isCredit ? 'transferIn' : 'payment',
+      title,
+      detail: item.concept || (refCode ? `Operación #${refCode}` : title),
+      amount,
+      balanceAfter: Number(item.balanceAfter),
+      status: 'completed',
+      createdAt: item.createdAt,
+      senderName: isCredit ? (counterparty || 'Cliente') : undefined,
+      recipient: !isCredit ? { name: counterparty || 'Comercio adherido', alias: item.counterpartyAlias } : undefined,
+    };
+  }
 
   if (item.source === 'DevelopmentFunding') {
     const isWelcomeBonus = rawAmount === 50000;
@@ -90,15 +111,21 @@ export function mapBackendMovement(item) {
   }
 
   if (item.source === 'Transfer') {
+    const title = counterparty
+      ? (isCredit ? `Transferencia de ${counterparty}` : `Transferencia a ${counterparty}`)
+      : (isCredit ? 'Transferencia recibida' : 'Transferencia enviada');
+
     return {
       id: item.id,
       kind: isCredit ? 'transferIn' : 'transferOut',
-      title: isCredit ? 'Transferencia recibida' : 'Transferencia enviada',
-      detail: refCode ? `Operación #${refCode}` : isCredit ? 'Transferencia recibida' : 'Transferencia enviada',
+      title,
+      detail: refCode ? `Operación #${refCode}` : title,
       amount,
       balanceAfter: Number(item.balanceAfter),
       status: 'completed',
       createdAt: item.createdAt,
+      senderName: isCredit ? (counterparty || 'Cuenta de origen') : undefined,
+      recipient: !isCredit ? { name: counterparty || 'Cuenta de destino', alias: item.counterpartyAlias } : undefined,
     };
   }
 

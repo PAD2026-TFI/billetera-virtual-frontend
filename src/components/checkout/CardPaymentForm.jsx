@@ -41,35 +41,37 @@ export default function CardPaymentForm({ amount, onPay }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onPay)} noValidate className="m-0 flex h-full flex-col justify-between gap-5">
+    <form onSubmit={handleSubmit(onPay)} noValidate className="m-0 flex flex-col gap-4">
       <div className="grid gap-4">
         <CardPreview number={card.number} holder={card.holder} expiry={card.expiry} cvv={card.cvv} flipped={flipped} />
 
-        <details className="rounded-2xl border border-[#ECE9F5] bg-[#F8F7FD] text-sm dark:border-[#261E3D] dark:bg-[#1E1735]/60">
-          <summary className="flex min-h-11 cursor-pointer items-center justify-between px-4 font-semibold text-[#4C1DB8] dark:text-[#B9A6FF]">
-            <span className="flex items-center gap-2">
-              <FlaskConical className="size-4" aria-hidden="true" />
-              Tarjetas de prueba
-            </span>
-            <span className="text-xs font-normal text-[#8C87A3] dark:text-[#9D97B5]">Simulador sandbox</span>
-          </summary>
-          <div className="grid gap-2 border-t border-[#ECE9F5] p-3 dark:border-[#261E3D]">
-            <p className="m-0 text-xs text-[#4A4560] dark:text-[#9D97B5]">Es un simulador: nunca ingreses los datos de una tarjeta real.</p>
-            <div className="grid gap-1.5">
-              {testCards.map(testCard => (
-                <button
-                  key={testCard.label}
-                  type="button"
-                  onClick={() => fillTestCard(testCard)}
-                  className="m-0 flex min-h-10 items-center justify-between gap-3 rounded-xl border border-[#ECE9F5] bg-white px-3 text-left transition-colors hover:bg-[#E9E5F6] dark:border-[#261E3D] dark:bg-[#140F24] dark:hover:bg-[#281F45]"
-                >
-                  <span className="text-xs font-semibold text-[#1C1633] dark:text-[#F4F2FA]">{testCard.label}</span>
-                  <span className="font-mono text-xs text-[#8C87A3] dark:text-[#9D97B5]">{testCard.number}</span>
-                </button>
-              ))}
+        {import.meta.env.MODE === 'test' && (
+          <details className="rounded-2xl border border-[#ECE9F5] bg-[#F8F7FD] text-sm dark:border-[#261E3D] dark:bg-[#1E1735]/60">
+            <summary className="flex min-h-11 cursor-pointer items-center justify-between px-4 font-semibold text-[#4C1DB8] dark:text-[#B9A6FF]">
+              <span className="flex items-center gap-2">
+                <FlaskConical className="size-4" aria-hidden="true" />
+                Tarjetas de prueba
+              </span>
+              <span className="text-xs font-normal text-[#8C87A3] dark:text-[#9D97B5]">Simulador sandbox</span>
+            </summary>
+            <div className="grid gap-2 border-t border-[#ECE9F5] p-3 dark:border-[#261E3D]">
+              <p className="m-0 text-xs text-[#4A4560] dark:text-[#9D97B5]">Es un simulador: nunca ingreses los datos de una tarjeta real.</p>
+              <div className="grid gap-1.5">
+                {testCards.map(testCard => (
+                  <button
+                    key={testCard.label}
+                    type="button"
+                    onClick={() => fillTestCard(testCard)}
+                    className="m-0 flex min-h-10 items-center justify-between gap-3 rounded-xl border border-[#ECE9F5] bg-white px-3 text-left transition-colors hover:bg-[#E9E5F6] dark:border-[#261E3D] dark:bg-[#140F24] dark:hover:bg-[#281F45]"
+                  >
+                    <span className="text-xs font-semibold text-[#1C1633] dark:text-[#F4F2FA]">{testCard.label}</span>
+                    <span className="font-mono text-xs text-[#8C87A3] dark:text-[#9D97B5]">{testCard.number}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        </details>
+          </details>
+        )}
 
         <div className="grid gap-3.5">
           <Field id="card-number" label="Número de tarjeta" error={errors.number}>

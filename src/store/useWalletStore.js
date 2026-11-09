@@ -42,8 +42,9 @@ function ensureMovementSync() {
 
       if (incomingToNotify.length > 0) {
         for (const mov of incomingToNotify) {
+          const isCollection = mov.kind === 'payment' || mov.title?.toLowerCase().includes('cobro');
           useNotificationStore.getState().notify({
-            title: '¡Transferencia recibida!',
+            title: isCollection ? '¡Cobro recibido con éxito!' : '¡Transferencia recibida!',
             description: `${formatCurrency(mov.amount)} • ${mov.title}`,
             type: 'transfer',
           });
@@ -55,9 +56,8 @@ function ensureMovementSync() {
         }
       }
     } catch {
-      // non-blocking background sync
     }
-  }, 5000);
+  }, 2500);
 }
 
 export class WalletError extends Error {

@@ -62,8 +62,53 @@ export default function MovementReceipt({ movement, onClose }) {
   const holder = useWalletStore(state => state.summary?.holder);
   const holderName = holder ? `${holder.firstName} ${holder.lastName}`.trim() : 'Tu cuenta';
   const isTransfer = movement?.kind === 'transferIn' || movement?.kind === 'transferOut';
-  const senderName = isIncome ? (movement?.senderName || movement?.title?.replace(/^De\s+/i, '') || 'Titular remitente') : holderName;
-  const recipientName = isIncome ? holderName : (movement?.recipient?.name || movement?.title?.replace(/^Transferencia a\s+/i, '') || 'Destinatario');
+  const isPayment = movement?.kind === 'payment' || movement?.title?.toLowerCase().includes('cobro') || movement?.title?.toLowerCase().includes('pago');
+  const showParties = isTransfer || isPayment;
+
+  const extractPartyName = raw => {
+    if (!raw || typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    const lower = trimmed.toLowerCase();
+    if (
+      lower === 'transferencia enviada' ||
+      lower === 'transferencia recibida' ||
+      lower === 'transferencia' ||
+      lower === 'cobro recibido' ||
+      lower === 'pago en comercio' ||
+      lower === 'carga de saldo' ||
+      lower.startsWith('operación #')
+    ) {
+      return null;
+    }
+    if (lower.startsWith('transferencia de ')) {
+      return trimmed.slice(17).trim();
+    }
+    if (lower.startsWith('transferencia a ')) {
+      return trimmed.slice(16).trim();
+    }
+    if (lower.startsWith('cobro de ')) {
+      return trimmed.slice(9).trim();
+    }
+    if (lower.startsWith('pago a ')) {
+      return trimmed.slice(7).trim();
+    }
+    if (lower.startsWith('de ')) {
+      return trimmed.slice(3).trim();
+    }
+    return trimmed;
+  };
+
+  const parsedSender = movement?.senderName || extractPartyName(movement?.title);
+  const parsedRecipient = movement?.recipient?.name || extractPartyName(movement?.title);
+
+  const senderName = isIncome ? (parsedSender || 'Cuenta de origen') : holderName;
+  const recipientName = isIncome ? holderName : (parsedRecipient || 'Cuenta de destino');
+
+  const receiptTitle = movement?.title?.toLowerCase().includes('cobro')
+    ? 'Comprobante de cobro recibido'
+    : (movement?.title?.toLowerCase().includes('pago')
+      ? 'Comprobante de pago en comercio'
+      : `Comprobante de ${kindLabels[movement?.kind]?.toLowerCase() ?? 'movimiento'}`);
 
   return (
     <Dialog.Root open={open} onOpenChange={value => !value && onClose()}>
@@ -72,11 +117,11 @@ export default function MovementReceipt({ movement, onClose }) {
         {movement && (
           <Dialog.Content
             aria-describedby={undefined}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[92svh] overflow-y-auto rounded-t-[32px] bg-white p-6 font-[Poppins] text-[#1C1633] shadow-[0_-20px_60px_rgba(9,6,19,0.45)] sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[440px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[32px] sm:shadow-[0_32px_80px_-20px_rgba(9,6,19,0.65)] dark:border dark:border-[#2C2247] dark:bg-[#140F24] dark:text-[#F4F2FA]"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] overflow-y-auto rounded-t-[32px] bg-white p-5 font-[Poppins] text-[#1C1633] shadow-[0_-20px_60px_rgba(9,6,19,0.45)] scrollbar-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-[420px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[28px] sm:p-6 sm:shadow-[0_32px_80px_-20px_rgba(9,6,19,0.65)] dark:border dark:border-[#2C2247] dark:bg-[#140F24] dark:text-[#F4F2FA]"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className={`grid size-11 place-items-center rounded-2xl ${iconTone(movement.kind, isIncome)}`}>
+                <span className={`grid size-10 place-items-center rounded-xl ${iconTone(movement.kind, isIncome)}`}>
                   {movement.status === 'completed' ? (
                     <CheckCircle2 className="size-5 stroke-[2.2]" aria-hidden="true" />
                   ) : (
@@ -89,45 +134,45 @@ export default function MovementReceipt({ movement, onClose }) {
                     <span aria-hidden="true" className="mb-[0.1em] ml-[0.06em] size-1.5 rounded-full bg-[#FFD54A]" />
                   </span>
                   <Dialog.Title className="m-0 text-xs font-medium text-[#6E6888] dark:text-[#9D97B5]">
-                    Comprobante de {kindLabels[movement.kind]?.toLowerCase() ?? 'movimiento'}
+                    {receiptTitle}
                   </Dialog.Title>
                 </div>
               </div>
 
               <Dialog.Close
                 aria-label="Cerrar comprobante"
-                className="m-0 grid size-10 place-items-center rounded-full border-0 bg-[#F3F1F9] p-0 text-[#4A4560] transition-colors hover:bg-[#E9E5F6] dark:bg-[#1E1735] dark:text-[#9D97B5] dark:hover:bg-[#281F45]"
+                className="m-0 grid size-9 place-items-center rounded-full border-0 bg-[#F3F1F9] p-0 text-[#4A4560] transition-colors hover:bg-[#E9E5F6] dark:bg-[#1E1735] dark:text-[#9D97B5] dark:hover:bg-[#281F45]"
               >
-                <X className="size-5" aria-hidden="true" />
+                <X className="size-4.5" aria-hidden="true" />
               </Dialog.Close>
             </div>
 
-            <div className="mt-5 rounded-2xl bg-[#F8F6FC] p-5 text-center dark:bg-[#1B1430]">
+            <div className="mt-3.5 rounded-2xl bg-[#F8F6FC] p-3.5 text-center dark:bg-[#1B1430]">
               <p
-                className={`m-0 font-mono text-[34px] leading-none font-bold tracking-[-0.03em] tabular-nums ${
+                className={`m-0 font-mono text-[28px] leading-tight font-bold tracking-[-0.03em] tabular-nums sm:text-[32px] ${
                   isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#1C1633] dark:text-[#F4F2FA]'
                 }`}
               >
                 {signedAmount(movement.amount)}
               </p>
-              <p className="m-0 mt-2 text-[15px] font-semibold text-[#1C1633] dark:text-[#F4F2FA]">
+              <p className="m-0 mt-1 text-sm font-semibold text-[#1C1633] dark:text-[#F4F2FA]">
                 {movement.title}
               </p>
             </div>
 
-            <div aria-hidden="true" className="relative my-5 flex items-center">
+            <div aria-hidden="true" className="relative my-3.5 flex items-center">
               <span className="w-full border-t border-dashed border-[#DFD9F0] dark:border-[#2E244A]" />
             </div>
 
-            <dl className="m-0 grid gap-3.5 text-sm">
+            <dl className="m-0 grid gap-2.5 text-sm">
               <ReceiptRow label="Estado">
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.className}`}>
                   <span aria-hidden="true" className={`size-1.5 rounded-full ${status.dotClass}`} />
                   {status.text}
                 </span>
               </ReceiptRow>
-              {isTransfer && <ReceiptRow label="De">{senderName}</ReceiptRow>}
-              {isTransfer && <ReceiptRow label="Para">{recipientName}</ReceiptRow>}
+              {showParties && <ReceiptRow label="De">{senderName}</ReceiptRow>}
+              {showParties && <ReceiptRow label="Para">{recipientName}</ReceiptRow>}
               <ReceiptRow label="Concepto">{movement.detail}</ReceiptRow>
               <ReceiptRow label="Fecha y hora">
                 <span className="font-mono text-xs sm:text-sm">{fullDateTime(movement.createdAt)}</span>
@@ -137,12 +182,12 @@ export default function MovementReceipt({ movement, onClose }) {
                   <span className="font-mono font-semibold">{formatCurrency(movement.balanceAfter)}</span>
                 </ReceiptRow>
               )}
-              <div className="mt-1 flex items-center justify-between gap-3 rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] px-3.5 py-2.5 dark:border-[#261E3D] dark:bg-[#19122C]">
+              <div className="mt-0.5 flex items-center justify-between gap-3 rounded-xl border border-[#ECE9F5] bg-[#FAF9FE] px-3 py-2 dark:border-[#261E3D] dark:bg-[#19122C]">
                 <div className="min-w-0">
-                  <dt className="text-[11px] font-medium tracking-wide text-[#8C87A3] uppercase dark:text-[#9D97B5]">
+                  <dt className="text-[10px] font-medium tracking-wide text-[#8C87A3] uppercase dark:text-[#9D97B5]">
                     N.º de operación
                   </dt>
-                  <dd className="m-0 mt-0.5 font-mono text-xs font-semibold break-all text-[#1C1633] dark:text-[#F4F2FA]">
+                  <dd className="m-0 font-mono text-xs font-semibold break-all text-[#1C1633] dark:text-[#F4F2FA]">
                     {movement.id}
                   </dd>
                 </div>
@@ -150,14 +195,14 @@ export default function MovementReceipt({ movement, onClose }) {
                   type="button"
                   onClick={() => copy(movement.id, 'id')}
                   aria-label={copied === 'id' ? 'Número copiado' : 'Copiar número de operación'}
-                  className="m-0 grid size-10 shrink-0 place-items-center rounded-full border-0 bg-white p-0 text-[#4C1DB8] shadow-xs transition-colors hover:bg-[#E9E5F6] dark:bg-[#241B3E] dark:text-[#FFD54A] dark:hover:bg-[#2F2450]"
+                  className="m-0 grid size-8 shrink-0 place-items-center rounded-full border-0 bg-white p-0 text-[#4C1DB8] shadow-xs transition-colors hover:bg-[#E9E5F6] dark:bg-[#241B3E] dark:text-[#FFD54A] dark:hover:bg-[#2F2450]"
                 >
-                  {copied === 'id' ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+                  {copied === 'id' ? <Check className="size-3.5" aria-hidden="true" /> : <Copy className="size-3.5" aria-hidden="true" />}
                 </button>
               </div>
             </dl>
 
-            <div className="mt-6 grid gap-2.5">
+            <div className="mt-4 grid gap-2">
               <button
                 type="button"
                 onClick={() =>
@@ -166,12 +211,12 @@ export default function MovementReceipt({ movement, onClose }) {
                     operationId: movement.id,
                     amount: Math.abs(movement.amount),
                     createdAt: movement.createdAt,
-                    senderName: isIncome ? (movement.senderName || movement.title?.replace(/^De\s+/i, '') || 'Titular remitente') : 'Titular de la cuenta',
-                    recipientName: isIncome ? 'Tu cuenta padi.' : (movement.recipient?.name || movement.title?.replace(/^Transferencia a\s+/i, '') || 'Destinatario'),
+                    senderName,
+                    recipientName,
                     concept: movement.detail,
                   })
                 }
-                className="m-0 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#5B2EE0] bg-[#FAF8FE] text-sm font-semibold text-[#5B2EE0] transition-colors hover:bg-[#5B2EE0]/10 dark:border-[#5B2EE0] dark:bg-[#1E1735] dark:text-[#FFD54A] dark:hover:bg-[#281F45]"
+                className="m-0 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[#5B2EE0] bg-[#FAF8FE] text-xs font-semibold text-[#5B2EE0] transition-colors hover:bg-[#5B2EE0]/10 sm:h-11 sm:text-sm dark:border-[#5B2EE0] dark:bg-[#1E1735] dark:text-[#FFD54A] dark:hover:bg-[#281F45]"
               >
                 <Download className="size-4" aria-hidden="true" />
                 Descargar comprobante en PDF
@@ -180,9 +225,9 @@ export default function MovementReceipt({ movement, onClose }) {
               <button
                 type="button"
                 onClick={share}
-                className={`${secondaryActionClass} inline-flex items-center justify-center gap-2`}
+                className={`${secondaryActionClass} inline-flex h-10 items-center justify-center gap-2 text-xs sm:h-11 sm:text-sm`}
               >
-                <Share2 className="size-[18px]" aria-hidden="true" />
+                <Share2 className="size-4" aria-hidden="true" />
                 {copied === 'receipt' ? 'Comprobante copiado' : 'Compartir comprobante'}
               </button>
             </div>
