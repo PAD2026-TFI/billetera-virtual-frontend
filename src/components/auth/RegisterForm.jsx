@@ -14,11 +14,13 @@ import {
   Loader2,
   Lock,
   Mail,
+  Store,
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { api } from "@/services/api";
+import { setStoredAccountType } from "@/store/useAuthStore";
 import { cn } from "cn";
 import { IconInput, PasswordInput } from "./IconInput.jsx";
 import { Divider } from "./LoginForm.jsx";
@@ -81,6 +83,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   const [serverError, setServerError] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registeredUser, setRegisteredUser] = useState(null);
+  const [accountType, setAccountType] = useState("personal");
 
   const otpRefs = useRef([]);
 
@@ -257,8 +260,11 @@ export default function RegisterForm({ onRegistered, onCancel }) {
         method: "POST",
         body,
       });
+      const userId = response?.userId || response?.id || "user-" + Date.now();
+      setStoredAccountType(body.email, accountType);
+      if (userId) setStoredAccountType(userId, accountType);
       setRegisteredUser({
-        id: response?.userId || response?.id || "user-" + Date.now(),
+        id: userId,
         walletId: response?.walletId,
         cvu: response?.cvu,
         alias: response?.alias,
@@ -266,6 +272,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
         lastName: response?.lastName || body.lastName || "",
         email: response?.email || body.email,
         dni: response?.dni || body.dni,
+        accountType,
       });
       setShowSuccessModal(true);
     } catch (error) {
@@ -287,12 +294,16 @@ export default function RegisterForm({ onRegistered, onCancel }) {
           setStep(4);
         }
       } else if (import.meta.env.MODE === "test") {
+        const mockId = "user-" + Date.now();
+        setStoredAccountType(body.email, accountType);
+        setStoredAccountType(mockId, accountType);
         setRegisteredUser({
-          id: "user-" + Date.now(),
+          id: mockId,
           firstName: body.firstName || "Usuario",
           lastName: body.lastName || "",
           email: body.email,
           dni: body.dni,
+          accountType,
         });
         setShowSuccessModal(true);
       } else {
@@ -380,6 +391,45 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             noValidate
             className="m-0 grid max-w-none gap-3"
           >
+            <div>
+              <Label className={cn(labelClass, "mb-2 block")}>Tipo de cuenta</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAccountType("personal")}
+                  className={cn(
+                    "m-0 flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-center transition-all",
+                    accountType === "personal"
+                      ? "border-[#5B2EE0] bg-[#FAF8FE] text-[#5B2EE0] ring-2 ring-[#5B2EE0]/30 dark:border-[#5B2EE0] dark:bg-[#1E1735] dark:text-[#FFD54A]"
+                      : "border-[#ECE9F5] bg-white text-[#6E6888] hover:border-[#5B2EE0]/30 dark:border-[#261E3D] dark:bg-[#140F24] dark:text-[#9D97B5]"
+                  )}
+                >
+                  <span className="grid size-8 place-items-center rounded-xl bg-[#5B2EE0]/10 text-[#5B2EE0] dark:bg-[#5B2EE0]/20 dark:text-[#FFD54A]">
+                    <User className="size-4" />
+                  </span>
+                  <span className="text-xs font-semibold">Personal</span>
+                  <span className="text-[10px] text-[#8C87A3] dark:text-[#6B6485]">Uso cotidiano</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAccountType("merchant")}
+                  className={cn(
+                    "m-0 flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-center transition-all",
+                    accountType === "merchant"
+                      ? "border-[#5B2EE0] bg-[#FAF8FE] text-[#5B2EE0] ring-2 ring-[#5B2EE0]/30 dark:border-[#5B2EE0] dark:bg-[#1E1735] dark:text-[#FFD54A]"
+                      : "border-[#ECE9F5] bg-white text-[#6E6888] hover:border-[#5B2EE0]/30 dark:border-[#261E3D] dark:bg-[#140F24] dark:text-[#9D97B5]"
+                  )}
+                >
+                  <span className="grid size-8 place-items-center rounded-xl bg-[#FFD54A]/25 text-[#7A5400] dark:bg-[#FFD54A]/20 dark:text-[#FFD54A]">
+                    <Store className="size-4" />
+                  </span>
+                  <span className="text-xs font-semibold">Vendedor</span>
+                  <span className="text-[10px] text-[#8C87A3] dark:text-[#6B6485]">Cobros y QR</span>
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="reg-firstName" className={labelClass}>

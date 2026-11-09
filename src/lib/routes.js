@@ -5,6 +5,7 @@ export const routes = {
   topUp: '/cargar',
   pay: '/pagar',
   card: '/tarjeta',
+  collections: '/cobros',
   profile: '/perfil',
   sandbox: '/sandbox',
   paymentReturn: '/payments/return',

@@ -16,7 +16,7 @@ import {
 import AppLayout, { PageHeader, panelClass } from '@/components/layout/AppLayout';
 import AccountDetails from '@/components/dashboard/AccountDetails';
 import { sectionTitleClass } from '@/components/forms/formStyles';
-import { useAuthStore, useSignOut } from '@/store/useAuthStore';
+import { isMerchantUser, useAuthStore, useSignOut } from '@/store/useAuthStore';
 import { useThemeStore } from '@/store/useThemeStore';
 
 const profilePanelClass = `${panelClass} m-0 border-0 lg:dark:border-0`;
@@ -24,6 +24,8 @@ const profilePanelClass = `${panelClass} m-0 border-0 lg:dark:border-0`;
 function ProfileContent({ summary }) {
   const [showAccountDetails, setShowAccountDetails] = useState(false);
   const user = useAuthStore(state => state.session?.user);
+  const setAccountType = useAuthStore(state => state.setAccountType);
+  const isMerchant = isMerchantUser(user);
   const signOut = useSignOut();
   const { theme, toggleTheme } = useThemeStore();
   const isDark = theme === 'dark';
@@ -34,7 +36,7 @@ function ProfileContent({ summary }) {
     { label: 'Nombre', value: firstName },
     { label: 'Apellido', value: lastName },
     { label: 'Correo electrónico', value: user?.email, mono: true },
-    { label: 'Tipo de cuenta', value: 'Cuenta personal' },
+    { label: 'Tipo de cuenta', value: isMerchant ? 'Cuenta Vendedor / Comercio' : 'Cuenta personal' },
   ].filter(row => row.value);
 
   return (
@@ -142,6 +144,26 @@ function ProfileContent({ summary }) {
                 </div>
               ))}
             </dl>
+
+            <div className="mt-4 flex items-center justify-between border-t border-[#ECE9F5] pt-3 dark:border-[#261E3D]">
+              <div>
+                <p className="m-0 text-xs font-semibold text-[#1C1633] dark:text-white">
+                  Modalidad Vendedor
+                </p>
+                <p className="m-0 text-[11px] text-[#8C87A3] dark:text-[#6E6888]">
+                  {isMerchant
+                    ? 'Tenés habilitada la sección de Cobros y QR.'
+                    : 'Activá la sección de Cobros para generar links y QR.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAccountType(isMerchant ? 'personal' : 'merchant')}
+                className="m-0 rounded-full border border-[#5B2EE0] px-3 py-1.5 text-xs font-semibold text-[#5B2EE0] transition-colors hover:bg-[#5B2EE0]/10 dark:border-[#FFD54A] dark:text-[#FFD54A] dark:hover:bg-[#FFD54A]/10"
+              >
+                {isMerchant ? 'Pasar a Personal' : 'Activar Vendedor'}
+              </button>
+            </div>
           </section>
 
           <div className="grid grid-cols-1 gap-4">
