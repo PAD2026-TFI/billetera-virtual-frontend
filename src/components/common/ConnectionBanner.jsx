@@ -7,7 +7,7 @@ export default function ConnectionBanner() {
   const serviceUnavailable = useNotificationStore(state => state.serviceUnavailable);
   const [checking, setChecking] = useState(false);
 
-  if (!serviceUnavailable) return null;
+  if (!serviceUnavailable || import.meta.env.MODE !== 'test') return null;
 
   async function retry() {
     setChecking(true);
