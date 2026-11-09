@@ -21,11 +21,11 @@ export default function RecipientCard({ recipient }) {
             aria-hidden="true"
             className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#4C1DB8] font-mono text-xs font-bold text-white shadow-[0_8px_16px_-6px_rgba(76,29,184,0.65)] dark:bg-[#5B2EE0]"
           >
-            {initialsFrom(recipient.name)}
+            {initialsFrom(recipient.name || recipient.destination)}
           </span>
           <div className="min-w-0">
             <p className="m-0 flex items-center gap-1.5 truncate text-[15px] font-bold tracking-tight text-[#1C1633] dark:text-[#F4F2FA]">
-              <span className="truncate">{recipient.name}</span>
+              <span className="truncate">{recipient.name || recipient.destination}</span>
               <BadgeCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
             </p>
             <p className="m-0 mt-0.5 truncate font-mono text-xs text-[#6E6888] dark:text-[#9D97B5]">

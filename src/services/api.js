@@ -11,7 +11,22 @@ const codeMessages = {
   IDEMPOTENCY_CONFLICT: 'Esta carga ya tiene otro importe. Recuperá su resultado antes de iniciar otra.',
   PAYMENT_NOT_FOUND: 'La carga no existe o no pertenece a tu cuenta.',
   PROVIDER_UNAVAILABLE: 'No pudimos consultar Mercado Pago. Conservamos tu operación.',
-  PROVIDER_TIMEOUT: 'La consulta está demorada. No vuelvas a pagar sin verificar el estado.'
+  PROVIDER_TIMEOUT: 'La consulta está demorada. No vuelvas a pagar sin verificar el estado.',
+  EMAIL_ALREADY_REGISTERED: 'Ya existe una cuenta registrada con este correo electrónico.',
+  DNI_ALREADY_REGISTERED: 'Ya existe una cuenta registrada con este documento.',
+  INSUFFICIENT_FUNDS: 'No tenés saldo suficiente para realizar esta operación.',
+  SAME_WALLET: 'No podés transferir dinero a tu propia cuenta.',
+  DESTINATION_UNAVAILABLE: 'La cuenta de destino no existe o no está disponible.',
+  WALLET_NOT_FOUND: 'Todavía no tenés una billetera activa.',
+  WALLET_INACTIVE: 'La billetera se encuentra inactiva para operar.',
+  WALLET_CONFLICT: 'Hubo un conflicto al procesar la operación. Intentá nuevamente.',
+  PAYMENT_LINK_NOT_FOUND: 'El enlace de cobro no existe o no está disponible.',
+  PAYMENT_LINK_EXPIRED: 'Este enlace de cobro ya venció.',
+  PAYMENT_LINK_ALREADY_PAID: 'Este enlace de cobro ya fue abonado.',
+  CARD_REJECTED: 'La tarjeta fue rechazada. Revisá los datos e intentá con otro medio.',
+  INVALID_IDEMPOTENCY_KEY: 'Falta el identificador de seguridad de la operación.',
+  DUPLICATE_ACTIVE_CARD_REQUEST: 'Ya tenés una solicitud de tarjeta física en curso.',
+  INVALID_ADDRESS: 'Revisá los datos del domicilio de entrega.'
 };
 const sessionExpiredMessage = 'Tu sesión venció. Iniciá sesión de nuevo.';
 const forbiddenMessage = 'No tenés permisos para realizar esta acción.';

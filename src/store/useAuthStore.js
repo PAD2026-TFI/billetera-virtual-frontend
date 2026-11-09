@@ -8,11 +8,11 @@ export const useAuthStore = create((set) => ({
 
   signIn: async (credentials) => {
     try {
-      const { accessToken, expiresIn } = await api("/api/auth/login", {
+      const { accessToken, expiresIn } = await api("/api/v1/auth/login", {
         method: "POST",
         body: credentials,
       });
-      const user = await api("/api/users/me", { token: accessToken });
+      const user = await api("/api/v1/me/profile", { token: accessToken });
       set({
         session: {
           token: accessToken,
@@ -21,7 +21,7 @@ export const useAuthStore = create((set) => ({
         },
       });
     } catch (e) {
-      if (e?.status) throw e;
+      if (e?.status || import.meta.env.MODE !== "test") throw e;
       const email = credentials?.email || "usuario@padi.com";
       const name = email.split("@")[0] || "Usuario";
       set({

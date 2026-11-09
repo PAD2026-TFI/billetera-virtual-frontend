@@ -60,10 +60,15 @@ export default function RecipientStep({ account, onConfirm }) {
       return;
     }
     setSearching(true);
-    const found = await lookupRecipient(key);
-    setSearching(false);
-    if (found) setRecipient(found);
-    else setError('No encontramos una cuenta con ese alias, CVU o CBU.');
+    try {
+      const found = await lookupRecipient(key);
+      if (found) setRecipient(found);
+      else setError('No encontramos una cuenta con ese alias, CVU o CBU.');
+    } catch (err) {
+      setError(err?.message || 'No encontramos una cuenta con ese alias, CVU o CBU.');
+    } finally {
+      setSearching(false);
+    }
   }
 
   function handleSelectFrequent(contact) {
@@ -116,24 +121,26 @@ export default function RecipientStep({ account, onConfirm }) {
         >
           Alias, CVU o CBU
         </label>
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-2">
-          <div className="relative min-w-0 w-full flex-1">
-            <IconInput
-              icon={Search}
-              id="destination"
-              autoComplete="off"
-              placeholder="nombre.apellido.padi o 22 dígitos"
-              className={`${fieldInputClass} h-11 w-full bg-white pl-11 dark:bg-[#120D20]`}
-              aria-invalid={!!errors.destination}
-              {...register('destination')}
-            />
-          </div>
+        <div className="relative flex items-center">
+          <input
+            id="destination"
+            autoComplete="off"
+            placeholder="nombre.apellido.padi o 22 dígitos"
+            className={`${fieldInputClass} h-11 w-full bg-white pr-12 pl-4 dark:bg-[#120D20]`}
+            aria-invalid={!!errors.destination}
+            {...register('destination')}
+          />
           <button
             type="submit"
             disabled={searching}
-            className={`${secondaryActionClass} h-11 w-full shrink-0 px-5 py-0 sm:w-auto`}
+            aria-label="Buscar cuenta"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 grid size-8 place-items-center rounded-xl bg-[#5B2EE0] text-white transition-all hover:bg-[#4C1DB8] disabled:opacity-50 dark:bg-[#5B2EE0] dark:hover:bg-[#6C3BF4]"
           >
-            Buscar cuenta
+            {searching ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Search className="size-4" aria-hidden="true" />
+            )}
           </button>
         </div>
         {errors.destination && (
