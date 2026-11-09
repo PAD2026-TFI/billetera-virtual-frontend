@@ -1,3 +1,6 @@
+import { api } from '@/services/api';
+import { useAuthStore } from '@/store/useAuthStore';
+
 export const mockTiming = { network: 400, settlement: 1800 };
 
 export const TRANSFER_LIMIT = 780400;
@@ -54,9 +57,158 @@ export const mockQrPayments = [
 
 export const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+export function isLiveSession() {
+  const token = useAuthStore.getState().session?.token;
+  return import.meta.env.MODE !== 'test' && Boolean(token) && token !== 'mock-jwt-token';
+}
+
+export function mapCardRequestStatus(status) {
+  if (status === 'Delivered') return 'delivered';
+  if (status === 'InTransit') return 'shipped';
+  if (status === 'Processing' || status === 'Issued') return 'production';
+  return 'requested';
+}
+
+export function mapBackendMovement(item) {
+  const isCredit = item.type === 'Credit';
+  const rawAmount = Number(item.amount) || 0;
+  const amount = isCredit ? rawAmount : -rawAmount;
+  const refCode = String(item.sourceId || item.id || '').slice(0, 8).toUpperCase();
+
+  if (item.source === 'DevelopmentFunding') {
+    const isWelcomeBonus = rawAmount === 50000;
+    return {
+      id: item.id,
+      kind: 'topUp',
+      title: isWelcomeBonus ? 'Bono de bienvenida' : 'Carga de saldo',
+      detail: isWelcomeBonus ? 'Acreditación inicial padi.' : 'Acreditación en cuenta',
+      amount,
+      balanceAfter: Number(item.balanceAfter),
+      status: 'completed',
+      createdAt: item.createdAt,
+    };
+  }
+
+  if (item.source === 'Transfer') {
+    return {
+      id: item.id,
+      kind: isCredit ? 'transferIn' : 'transferOut',
+      title: isCredit ? 'Transferencia recibida' : 'Transferencia enviada',
+      detail: refCode ? `Operación #${refCode}` : isCredit ? 'Transferencia recibida' : 'Transferencia enviada',
+      amount,
+      balanceAfter: Number(item.balanceAfter),
+      status: 'completed',
+      createdAt: item.createdAt,
+    };
+  }
+
+  return {
+    id: item.id,
+    kind: isCredit ? 'transferIn' : 'payment',
+    title: isCredit ? 'Cobro acreditado' : 'Pago en comercio',
+    detail: 'Pasarela padi.',
+    amount,
+    balanceAfter: Number(item.balanceAfter),
+    status: 'completed',
+    createdAt: item.createdAt,
+  };
+}
+
 export async function fetchWalletSummary() {
-  await wait(mockTiming.network);
-  return structuredClone(mockWalletSummary);
+  if (!isLiveSession()) {
+    await wait(mockTiming.network);
+    return structuredClone(mockWalletSummary);
+  }
+
+  const sessionUser = useAuthStore.getState().session?.user;
+  const profilePromise = api('/api/v1/me/profile').catch(() => sessionUser);
+
+  let wallet;
+  try {
+    wallet = await api('/api/v1/me/wallet');
+  } catch (error) {
+    if (error?.status === 404 || error?.code === 'WALLET_NOT_FOUND') {
+      wallet = await api('/api/v1/me/wallet', { method: 'POST' });
+    } else {
+      throw error;
+    }
+  }
+
+  const [profile, movementsPage, cards, cardOrders] = await Promise.all([
+    profilePromise,
+    api('/api/v1/me/wallet/movements?limit=50').catch(() => ({ items: [] })),
+    api('/api/v1/me/cards').catch(() => []),
+    api('/api/v1/me/physical-card-orders').catch(() => []),
+  ]);
+
+  const recentMovements = Array.isArray(movementsPage?.items)
+    ? movementsPage.items.map(mapBackendMovement)
+    : [];
+
+  if (recentMovements.length === 0 && Number(wallet.balance) === 50000) {
+    recentMovements.push({
+      id: `welcome-${wallet.id}`,
+      kind: 'topUp',
+      title: 'Bono de bienvenida',
+      detail: 'Acreditación inicial padi.',
+      amount: 50000,
+      balanceAfter: 50000,
+      status: 'completed',
+      createdAt: wallet.createdAt || new Date().toISOString(),
+    });
+  }
+
+  const primaryCard = Array.isArray(cards) && cards.length > 0 ? cards[0] : null;
+  const expMonth = String(primaryCard?.expirationMonth || 12).padStart(2, '0');
+  const expYear = String(primaryCard?.expirationYear || 2030).slice(-2);
+
+  const latestOrder = Array.isArray(cardOrders) && cardOrders.length > 0 ? cardOrders[0] : null;
+  const cardRequest = latestOrder
+    ? {
+        id: latestOrder.id,
+        status: mapCardRequestStatus(latestOrder.status),
+        createdAt: latestOrder.requestedAt,
+        address: {
+          street: latestOrder.deliveryAddress?.street || '',
+          number: latestOrder.deliveryAddress?.number || '',
+          floor: '',
+          city: latestOrder.deliveryAddress?.city || '',
+          province: latestOrder.deliveryAddress?.state || '',
+          postalCode: latestOrder.deliveryAddress?.postalCode || '',
+        },
+      }
+    : null;
+
+  const monthlyOutflows = recentMovements
+    .filter(m => m.amount < 0)
+    .reduce((acc, m) => acc + Math.abs(m.amount), 0);
+
+  return {
+    holder: {
+      firstName: profile?.firstName || sessionUser?.firstName || 'Usuario',
+      lastName: profile?.lastName || sessionUser?.lastName || '',
+    },
+    balance: Number(wallet.balance) || 0,
+    currency: wallet.currency || 'ARS',
+    account: {
+      id: wallet.id,
+      cvu: wallet.cvu || '',
+      alias: wallet.alias || '',
+    },
+    card: {
+      id: primaryCard?.id,
+      lastDigits: primaryCard?.cardNumberLast4 || '4821',
+      expiry: `${expMonth}/${expYear}`,
+      status: primaryCard ? (primaryCard.isActive ? 'active' : 'blocked') : 'active',
+    },
+    monthlySpending: {
+      amount: Math.round(monthlyOutflows * 100) / 100,
+      budget: 80000,
+      changePercent: 0,
+    },
+    recentMovements,
+    cardRequest,
+  };
 }
 
 export function resolveRecipient(destination) {
@@ -65,11 +217,34 @@ export function resolveRecipient(destination) {
   return recipient ? { destination: key, name: recipient.name, cuit: recipient.cuit, bank: recipient.bank } : null;
 }
 
-export const frequentContacts = Object.keys(mockRecipients)
-  .filter(destination => mockRecipients[destination].frequent)
-  .map(resolveRecipient);
+export const frequentContacts = import.meta.env.MODE === 'test'
+  ? Object.keys(mockRecipients)
+      .filter(destination => mockRecipients[destination].frequent)
+      .map(resolveRecipient)
+  : [];
 
 export async function lookupRecipient(destination) {
-  await wait(mockTiming.network);
-  return resolveRecipient(destination);
+  if (!isLiveSession()) {
+    await wait(mockTiming.network);
+    return resolveRecipient(destination);
+  }
+
+  const trimmed = destination.trim();
+  try {
+    const res = await api(`/api/v1/me/transfers/recipient?destination=${encodeURIComponent(trimmed)}`);
+    return {
+      destination: res.destination || trimmed,
+      walletId: res.walletId,
+      cvu: res.cvu,
+      alias: res.alias,
+      name: res.name || res.holderName || trimmed,
+      cuit: res.cuit,
+      bank: res.bank || 'padi.',
+    };
+  } catch (error) {
+    if (error?.status === 404) {
+      return resolveRecipient(trimmed);
+    }
+    throw error;
+  }
 }

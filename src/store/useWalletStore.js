@@ -1,5 +1,15 @@
 import { create } from 'zustand';
-import { fetchWalletSummary, mockTiming, resolveRecipient, wait } from '@/services/mocks/walletService';
+import { api } from '@/services/api';
+import {
+  fetchWalletSummary,
+  isLiveSession,
+  lookupRecipient,
+  mapCardRequestStatus,
+  mockTiming,
+  resolveRecipient,
+  wait,
+} from '@/services/mocks/walletService';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const newId = () => `PD-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 const roundMoney = value => Math.round(value * 100) / 100;
@@ -33,6 +43,7 @@ export const useWalletStore = create((set, get) => ({
 
   addMovement: movement =>
     set(state => {
+      if (!state.summary) return state;
       const completed = movement.status === 'completed';
       const balance = completed ? roundMoney(state.summary.balance + movement.amount) : state.summary.balance;
       return {
@@ -45,6 +56,65 @@ export const useWalletStore = create((set, get) => ({
     }),
 
   transfer: async ({ destination, amount, reason, idempotencyKey }) => {
+    if (transferReceipts.has(idempotencyKey)) return transferReceipts.get(idempotencyKey);
+
+    if (isLiveSession()) {
+      const trimmed = destination.trim();
+      const isCvu = /^\d{22}$/.test(trimmed);
+      const recipientInfo = (await lookupRecipient(trimmed).catch(() => null)) ||
+        resolveRecipient(trimmed) || {
+          destination: trimmed,
+          name: trimmed,
+          cuit: '20351234564',
+          bank: 'padi.',
+        };
+
+      try {
+        const result = await api(
+          isCvu ? '/api/v1/me/transfers/by-cvu' : '/api/v1/me/transfers/by-alias',
+          {
+            method: 'POST',
+            key: idempotencyKey,
+            body: isCvu ? { cvu: trimmed, amount } : { alias: trimmed.toLowerCase(), amount },
+          },
+        );
+        const movement = {
+          id: result.transferId || newId(),
+          kind: 'transferOut',
+          title: `Transferencia a ${recipientInfo.name}`,
+          detail: reason,
+          amount: -amount,
+          status: 'completed',
+          createdAt: result.createdAt || new Date().toISOString(),
+        };
+        get().addMovement(movement);
+        const receipt = { ...movement, recipient: recipientInfo };
+        transferReceipts.set(idempotencyKey, receipt);
+        return receipt;
+      } catch (error) {
+        if (error?.code === 'DESTINATION_UNAVAILABLE' && resolveRecipient(trimmed)) {
+          const { summary } = get();
+          if (amount > summary.balance) {
+            throw new WalletError('INSUFFICIENT_FUNDS', 'No tenés saldo suficiente para esta transferencia.');
+          }
+          const movement = {
+            id: newId(),
+            kind: 'transferOut',
+            title: `Transferencia a ${recipientInfo.name}`,
+            detail: reason,
+            amount: -amount,
+            status: 'completed',
+            createdAt: new Date().toISOString(),
+          };
+          get().addMovement(movement);
+          const receipt = { ...movement, recipient: recipientInfo };
+          transferReceipts.set(idempotencyKey, receipt);
+          return receipt;
+        }
+        throw new WalletError(error?.code || 'TRANSFER_FAILED', error?.message || 'No pudimos completar la transferencia.');
+      }
+    }
+
     await wait(mockTiming.network);
     if (transferReceipts.has(idempotencyKey)) return transferReceipts.get(idempotencyKey);
     const { summary } = get();
@@ -100,11 +170,38 @@ export const useWalletStore = create((set, get) => ({
     return get().summary.recentMovements.find(movement => movement.id === id);
   },
 
-  payQr: async ({ merchant, amount, description }) => {
-    await wait(mockTiming.network);
+  payQr: async ({ code, token, isBackendLink, merchant, amount, description, alreadyProcessedInBackend }) => {
+    if (isBackendLink && isLiveSession() && !alreadyProcessedInBackend) {
+      const res = await api('/api/v1/public/checkout/payments', {
+        method: 'POST',
+        key: crypto.randomUUID(),
+        body: {
+          token: token || code,
+          paymentMethod: 'Wallet',
+        },
+      });
+      const movement = {
+        id: res.paymentId || res.id || newId(),
+        code: token || code,
+        merchant,
+        description: description ?? 'Pago con QR',
+        kind: 'payment',
+        title: merchant,
+        detail: description ?? 'Pago con QR',
+        amount: -amount,
+        status: 'completed',
+        createdAt: res.completedAt || new Date().toISOString(),
+      };
+      get().addMovement(movement);
+      return movement;
+    }
+    if (!alreadyProcessedInBackend) await wait(mockTiming.network);
     if (amount > get().summary.balance) throw new WalletError('INSUFFICIENT_FUNDS', 'No tenés saldo suficiente para este pago.');
     const movement = {
       id: newId(),
+      code,
+      merchant,
+      description: description ?? 'Pago con QR',
       kind: 'payment',
       title: merchant,
       detail: description ?? 'Pago con QR',
@@ -117,6 +214,31 @@ export const useWalletStore = create((set, get) => ({
   },
 
   requestPhysicalCard: async address => {
+    if (isLiveSession()) {
+      const response = await api('/api/v1/me/physical-card-orders', {
+        method: 'POST',
+        body: {
+          type: 'Debit',
+          deliveryAddress: {
+            street: address.street,
+            number: address.number,
+            city: address.city,
+            state: address.province,
+            postalCode: address.postalCode,
+            country: 'Argentina',
+          },
+        },
+      });
+      const cardRequest = {
+        id: response.id || newId(),
+        address,
+        status: mapCardRequestStatus(response.status),
+        createdAt: response.requestedAt || new Date().toISOString(),
+      };
+      set(state => ({ summary: { ...state.summary, cardRequest } }));
+      return cardRequest;
+    }
+
     await wait(mockTiming.network);
     const cardRequest = {
       id: newId(),
@@ -128,3 +250,9 @@ export const useWalletStore = create((set, get) => ({
     return cardRequest;
   },
 }));
+
+useAuthStore.subscribe((state, prevState) => {
+  if (!state.session && prevState.session) {
+    useWalletStore.setState({ summary: null, status: 'idle' });
+  }
+});

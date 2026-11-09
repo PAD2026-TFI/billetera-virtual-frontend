@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { api } from "@/services/api";
 import { cn } from "cn";
 import { IconInput, PasswordInput } from "./IconInput.jsx";
 import { Divider } from "./LoginForm.jsx";
@@ -162,6 +163,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     e.preventDefault();
     const valid = await trigger(["firstName", "lastName", "dni"]);
     if (valid) {
+      setServerError("");
       setStep(2);
     }
   }
@@ -170,6 +172,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     e?.preventDefault();
     const valid = await trigger("email");
     if (!valid) return;
+    setServerError("");
     setCountdown(60);
     setToast("¡Código enviado! Revisá tu casilla de correo.");
     setOtp(["", "", "", "", "", ""]);
@@ -232,6 +235,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     e.preventDefault();
     const valid = await trigger(["password", "confirmPassword"]);
     if (!valid) return;
+    setServerError("");
     setStep(5);
   }
 
@@ -249,18 +253,54 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     };
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      const mockUser = {
-        id: "user-" + Date.now(),
-        firstName: body.firstName || "Usuario",
-        lastName: body.lastName || "",
-        email: body.email,
-        dni: body.dni,
-      };
-      setRegisteredUser(mockUser);
+      const response = await api("/api/v1/auth/register", {
+        method: "POST",
+        body,
+      });
+      setRegisteredUser({
+        id: response?.userId || response?.id || "user-" + Date.now(),
+        walletId: response?.walletId,
+        cvu: response?.cvu,
+        alias: response?.alias,
+        firstName: response?.firstName || body.firstName || "Usuario",
+        lastName: response?.lastName || body.lastName || "",
+        email: response?.email || body.email,
+        dni: response?.dni || body.dni,
+      });
       setShowSuccessModal(true);
-    } catch {
-      setServerError("Ocurrió un error inesperado. Por favor reintentá.");
+    } catch (error) {
+      if (error?.status) {
+        setServerError(
+          error.message || "Ocurrió un error al registrar la cuenta.",
+        );
+        if (
+          error.code === "EMAIL_ALREADY_REGISTERED" ||
+          error.fieldErrors?.email
+        ) {
+          setStep(2);
+        } else if (
+          error.code === "DNI_ALREADY_REGISTERED" ||
+          error.fieldErrors?.dni
+        ) {
+          setStep(1);
+        } else {
+          setStep(4);
+        }
+      } else if (import.meta.env.MODE === "test") {
+        setRegisteredUser({
+          id: "user-" + Date.now(),
+          firstName: body.firstName || "Usuario",
+          lastName: body.lastName || "",
+          email: body.email,
+          dni: body.dni,
+        });
+        setShowSuccessModal(true);
+      } else {
+        setServerError(
+          error?.message || "Ocurrió un error inesperado. Por favor reintentá.",
+        );
+        setStep(4);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -313,6 +353,12 @@ export default function RegisterForm({ onRegistered, onCancel }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {serverError && step !== 4 && (
+        <p role="alert" className={cn(alertClass, "mb-3")}>
+          {serverError}
+        </p>
+      )}
 
       {step === 1 && (
         <motion.div

@@ -1,4 +1,5 @@
 import { detectCardBrand, onlyDigits, simulatedRejection } from '@/lib/cards';
+import { api } from '@/services/api';
 import { mockTiming, wait } from './walletService';
 
 export const testCards = [
@@ -45,6 +46,10 @@ export class CheckoutError extends Error {
   }
 }
 
+function isMockToken(token) {
+  return Boolean(paymentLinks[token]) || import.meta.env.MODE === 'test';
+}
+
 function findLink(token) {
   const link = paymentLinks[token];
   if (!link) throw new CheckoutError('PAYMENT_LINK_NOT_FOUND', 'Este link de pago no existe.');
@@ -53,6 +58,29 @@ function findLink(token) {
 }
 
 export async function fetchCheckoutLink(token) {
+  if (!isMockToken(token)) {
+    try {
+      const details = await api(`/api/v1/public/payment-links/${encodeURIComponent(token)}`);
+      return {
+        id: details.id,
+        token: details.token || token,
+        title: details.title,
+        description: details.description || 'Cobro con pasarela padi.',
+        merchantName: details.merchantName || 'Comercio adherido padi.',
+        amount: Number(details.amount),
+        currency: details.currency || 'ARS',
+        status: details.status,
+        expiresAt: details.expiresAt || minutesFromNow(30),
+        isPayable: Boolean(details.isPayable),
+      };
+    } catch (error) {
+      throw new CheckoutError(
+        error?.code || 'PAYMENT_LINK_NOT_FOUND',
+        error?.message || 'Este link de pago no existe.',
+      );
+    }
+  }
+
   await wait(mockTiming.network);
   const link = findLink(token);
   return {
@@ -90,6 +118,48 @@ function receiptFor(token, paymentMethod, extra = {}) {
 }
 
 export async function payCheckoutWithCard(token, card) {
+  if (!isMockToken(token)) {
+    const digits = onlyDigits(card.number);
+    const [rawMonth, rawYear] = String(card.expiry || '12/30').split('/');
+    const expirationMonth = Number(rawMonth) || 12;
+    const expirationYear = Number(rawYear?.length === 2 ? `20${rawYear}` : rawYear) || 2030;
+
+    try {
+      const res = await api('/api/v1/public/checkout/payments', {
+        method: 'POST',
+        key: crypto.randomUUID(),
+        body: {
+          token,
+          paymentMethod: 'Card',
+          card: {
+            cardNumber: digits,
+            cardHolderName: card.holder || 'TITULAR',
+            expirationMonth,
+            expirationYear,
+            cvv: card.cvv || '123',
+          },
+        },
+      });
+      return {
+        paymentId: res.paymentId || res.id || crypto.randomUUID(),
+        token: res.token || token,
+        amount: Number(res.amount),
+        currency: res.currency || 'ARS',
+        paymentMethod: 'Card',
+        status: 'Approved',
+        paidAt: res.completedAt || res.paidAt || new Date().toISOString(),
+        authorizationCode: res.authorizationCode || 'AUTH-OK',
+        cardBrand: detectCardBrand(digits),
+        cardLast4: digits.slice(-4),
+      };
+    } catch (error) {
+      throw new CheckoutError(
+        error?.code || 'CARD_REJECTED',
+        error?.message || 'Pago rechazado por la entidad emisora.',
+      );
+    }
+  }
+
   await wait(mockTiming.network);
   payableLink(token);
   const rejection = simulatedRejection(card);
@@ -103,6 +173,41 @@ export async function payCheckoutWithCard(token, card) {
 }
 
 export async function payCheckoutWithWallet(token, debit) {
+  if (!isMockToken(token)) {
+    try {
+      const details = await fetchCheckoutLink(token);
+      const res = await api('/api/v1/public/checkout/payments', {
+        method: 'POST',
+        key: crypto.randomUUID(),
+        body: {
+          token,
+          paymentMethod: 'Wallet',
+        },
+      });
+      await debit({
+        merchant: details.merchantName,
+        amount: details.amount,
+        description: details.title,
+        alreadyProcessedInBackend: true,
+      });
+      return {
+        paymentId: res.paymentId || res.id || crypto.randomUUID(),
+        token: res.token || token,
+        amount: Number(res.amount || details.amount),
+        currency: res.currency || 'ARS',
+        paymentMethod: 'Wallet',
+        status: 'Approved',
+        paidAt: res.completedAt || res.paidAt || new Date().toISOString(),
+        authorizationCode: res.authorizationCode || 'WALLET-PAY',
+      };
+    } catch (error) {
+      throw new CheckoutError(
+        error?.code || 'WALLET_PAYMENT_FAILED',
+        error?.message || 'No pudimos procesar el pago con tu billetera.',
+      );
+    }
+  }
+
   const link = payableLink(token);
   await debit({ merchant: link.merchantName, amount: link.amount, description: link.title });
   return receiptFor(token, 'Wallet');

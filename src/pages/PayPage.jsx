@@ -22,6 +22,7 @@ import {
 } from '@/components/forms/formStyles';
 import { formatCurrency, formatDateTime } from '@/lib/formatters';
 import { routes } from '@/lib/routes';
+import { fetchCheckoutLink } from '@/services/mocks/checkoutService';
 import { mockQrPayments } from '@/services/mocks/walletService';
 import { useWalletStore } from '@/store/useWalletStore';
 
@@ -72,13 +73,38 @@ function Scanner({ onScan }) {
     };
   }, []);
 
-  function lookUp(event) {
+  async function lookUp(event) {
     event.preventDefault();
-    const payment = mockQrPayments.find(item => item.code.toLowerCase() === code.trim().toLowerCase());
-    if (!payment) return setError('No encontramos un cobro con ese código.');
-    setError('');
-    stopCamera();
-    onScan(payment);
+    const trimmed = code.trim();
+    const payment = mockQrPayments.find(item => item.code.toLowerCase() === trimmed.toLowerCase());
+    if (payment) {
+      setError('');
+      stopCamera();
+      onScan(payment);
+      return;
+    }
+    if (import.meta.env.MODE !== 'test' && trimmed) {
+      try {
+        const link = await fetchCheckoutLink(trimmed);
+        if (link && link.isPayable) {
+          setError('');
+          stopCamera();
+          onScan({
+            code: link.token,
+            token: link.token,
+            isBackendLink: true,
+            merchant: link.merchantName || 'Comercio adherido padi.',
+            description: link.title || link.description || 'Pago con QR',
+            amount: link.amount,
+          });
+          return;
+        }
+      } catch {
+        setError('No encontramos un cobro con ese código.');
+        return;
+      }
+    }
+    setError('No encontramos un cobro con ese código.');
   }
 
   return (
