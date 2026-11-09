@@ -2,12 +2,18 @@ import { BadgeCheck, Building2 } from 'lucide-react';
 import { formatCuit } from '@/lib/formatters';
 
 function initialsFrom(name = '') {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(part => part[0]?.toUpperCase())
-    .join('');
+  const letters = String(name || '').replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').trim();
+  const parts = letters.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  if (parts.length === 1 && parts[0].length >= 2) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  if (parts.length === 1) {
+    return parts[0][0].toUpperCase();
+  }
+  return 'PD';
 }
 
 export default function RecipientCard({ recipient }) {

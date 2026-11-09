@@ -11,6 +11,7 @@ import ReviewStep from '@/components/transfer/ReviewStep';
 import { formatCuit, formatCurrency, formatDateTime } from '@/lib/formatters';
 import { downloadReceiptPdf } from '@/lib/pdfReceipt';
 import { routes } from '@/lib/routes';
+import { saveFrequentContact } from '@/services/contactsService';
 import { TRANSFER_LIMIT } from '@/services/mocks/walletService';
 import { useWalletStore } from '@/store/useWalletStore';
 
@@ -44,7 +45,9 @@ function TransferContent({ summary }) {
     setSending(true);
     setError('');
     try {
-      setReceipt(await transfer({ destination: recipient.destination, ...draft, idempotencyKey }));
+      const receiptData = await transfer({ destination: recipient.destination, ...draft, idempotencyKey });
+      saveFrequentContact(recipient);
+      setReceipt(receiptData);
       setStep(3);
     } catch (failure) {
       setError(failure.message);
