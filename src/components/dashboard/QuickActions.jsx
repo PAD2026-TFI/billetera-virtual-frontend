@@ -1,6 +1,7 @@
-import { ArrowLeftRight, CreditCard, QrCode } from 'lucide-react';
+import { ArrowLeftRight, CreditCard, QrCode, Store } from 'lucide-react';
+import { isMerchantUser, useAuthStore } from '@/store/useAuthStore';
 
-const actions = [
+const baseActions = [
   {
     id: 'transfer',
     label: 'Transferir',
@@ -30,18 +31,34 @@ const actions = [
   },
 ];
 
+const merchantAction = {
+  id: 'collections',
+  label: 'Cobrar',
+  icon: Store,
+  tileClass:
+    'border-[#5B2EE0]/30 bg-gradient-to-b from-[#FAF8FE] to-[#F3EEFF] hover:border-[#5B2EE0] dark:border-[#5B2EE0]/40 dark:from-[#231A3D] dark:to-[#19112F] dark:hover:border-[#FFD54A]/60',
+  iconClass:
+    'bg-[#5B2EE0] text-white shadow-[0_10px_20px_-8px_rgba(91,46,224,0.75)] ring-1 ring-inset ring-white/20 group-hover:bg-[#6C3BF4] dark:bg-[#FFD54A] dark:text-[#1C1633]',
+};
+
 export default function QuickActions({ onAction }) {
+  const isMerchant = useAuthStore(state => isMerchantUser(state.session?.user));
+  const actions = isMerchant ? [...baseActions, merchantAction] : baseActions;
+
   return (
-    <nav aria-label="Acciones rápidas" className="grid grid-cols-3 gap-3">
+    <nav
+      aria-label="Acciones rápidas"
+      className={`grid gap-2.5 sm:gap-3 ${isMerchant ? 'grid-cols-4' : 'grid-cols-3'}`}
+    >
       {actions.map(({ id, label, icon: Icon, tileClass, iconClass }) => (
         <button
           key={id}
           type="button"
           onClick={() => onAction?.(id)}
-          className={`group m-0 flex flex-col items-center gap-2 rounded-[20px] border p-3 text-xs font-semibold tracking-[-0.01em] text-[#1C1633] transition-all duration-150 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[#5B2EE0]/40 focus-visible:outline-none sm:text-[13px] dark:text-[#F4F2FA] ${tileClass}`}
+          className={`group m-0 flex flex-col items-center gap-2 rounded-[20px] border p-2.5 sm:p-3 text-xs font-semibold tracking-[-0.01em] text-[#1C1633] transition-all duration-150 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[#5B2EE0]/40 focus-visible:outline-none sm:text-[13px] dark:text-[#F4F2FA] ${tileClass}`}
         >
           <span
-            className={`grid size-12 place-items-center rounded-2xl transition-transform duration-150 group-hover:scale-105 ${iconClass}`}
+            className={`grid size-11 sm:size-12 place-items-center rounded-2xl transition-transform duration-150 group-hover:scale-105 ${iconClass}`}
           >
             <Icon className="size-5 stroke-[2.2]" aria-hidden="true" />
           </span>

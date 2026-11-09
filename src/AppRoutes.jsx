@@ -10,6 +10,7 @@ import TransferPage from '@/pages/TransferPage';
 import TopUpPage from '@/pages/TopUpPage';
 import PayPage from '@/pages/PayPage';
 import CardPage from '@/pages/CardPage';
+import CollectionsPage from '@/pages/CollectionsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SandboxPage from '@/pages/SandboxPage';
 import CheckoutPage from '@/pages/CheckoutPage';
@@ -32,6 +33,7 @@ export default function AppRoutes() {
         <Route path={routes.topUp} element={<TopUpPage />} />
         <Route path={routes.pay} element={<PayPage />} />
         <Route path={routes.card} element={<CardPage />} />
+        <Route path={routes.collections} element={<CollectionsPage />} />
         <Route path={routes.profile} element={<ProfilePage />} />
         <Route path={routes.sandbox} element={<SandboxPage />} />
         <Route path={routes.paymentReturn} element={<Navigate to={routes.sandbox} replace />} />

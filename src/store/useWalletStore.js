@@ -1,19 +1,64 @@
 import { create } from 'zustand';
 import { api } from '@/services/api';
+import { formatCurrency } from '@/lib/formatters';
 import {
   fetchWalletSummary,
   isLiveSession,
   lookupRecipient,
+  mapBackendMovement,
   mapCardRequestStatus,
   mockTiming,
   resolveRecipient,
   wait,
 } from '@/services/mocks/walletService';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
 
 const newId = () => `PD-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 const roundMoney = value => Math.round(value * 100) / 100;
 const transferReceipts = new Map();
+const seenMovementIds = new Set();
+let syncInterval = null;
+
+function ensureMovementSync() {
+  if (syncInterval || typeof window === 'undefined') return;
+  syncInterval = setInterval(async () => {
+    if (document.hidden || !isLiveSession()) return;
+    try {
+      const page = await api('/api/v1/me/wallet/movements?limit=10').catch(() => null);
+      if (!page?.items || !Array.isArray(page.items)) return;
+
+      const movements = page.items.map(mapBackendMovement);
+      const incomingToNotify = [];
+
+      for (const mov of movements) {
+        if (!seenMovementIds.has(mov.id)) {
+          seenMovementIds.add(mov.id);
+          if (mov.amount > 0) {
+            incomingToNotify.push(mov);
+          }
+        }
+      }
+
+      if (incomingToNotify.length > 0) {
+        for (const mov of incomingToNotify) {
+          useNotificationStore.getState().notify({
+            title: '¡Transferencia recibida!',
+            description: `${formatCurrency(mov.amount)} • ${mov.title}`,
+            type: 'transfer',
+          });
+        }
+        const state = useWalletStore.getState();
+        if (state.status === 'ready') {
+          const fresh = await fetchWalletSummary().catch(() => null);
+          if (fresh) useWalletStore.setState({ summary: fresh });
+        }
+      }
+    } catch {
+      // non-blocking background sync
+    }
+  }, 5000);
+}
 
 export class WalletError extends Error {
   constructor(code, message) {
@@ -32,7 +77,13 @@ export const useWalletStore = create((set, get) => ({
     set({ status: 'loading' });
     try {
       const summary = await fetchWalletSummary();
+      if (Array.isArray(summary?.recentMovements)) {
+        for (const m of summary.recentMovements) {
+          seenMovementIds.add(m.id);
+        }
+      }
       set({ summary, status: 'ready' });
+      ensureMovementSync();
     } catch {
       set({ status: 'error' });
     }
@@ -253,6 +304,11 @@ export const useWalletStore = create((set, get) => ({
 
 useAuthStore.subscribe((state, prevState) => {
   if (!state.session && prevState.session) {
+    if (syncInterval) {
+      clearInterval(syncInterval);
+      syncInterval = null;
+    }
+    seenMovementIds.clear();
     useWalletStore.setState({ summary: null, status: 'idle' });
   }
 });

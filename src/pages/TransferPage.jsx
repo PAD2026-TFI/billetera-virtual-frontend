@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, CheckCircle2, Lock, ShieldCheck, Wallet, Zap } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2, Download, Lock, ShieldCheck, Wallet, Zap } from 'lucide-react';
 import AppLayout, { PageHeader, panelClass } from '@/components/layout/AppLayout';
 import ResultCard from '@/components/common/ResultCard';
 import { primaryActionClass, secondaryActionClass, sectionTitleClass } from '@/components/forms/formStyles';
@@ -9,6 +9,7 @@ import RecipientStep from '@/components/transfer/RecipientStep';
 import AmountStep from '@/components/transfer/AmountStep';
 import ReviewStep from '@/components/transfer/ReviewStep';
 import { formatCuit, formatCurrency, formatDateTime } from '@/lib/formatters';
+import { downloadReceiptPdf } from '@/lib/pdfReceipt';
 import { routes } from '@/lib/routes';
 import { TRANSFER_LIMIT } from '@/services/mocks/walletService';
 import { useWalletStore } from '@/store/useWalletStore';
@@ -104,6 +105,7 @@ function TransferContent({ summary }) {
                 title={stepTitles[3]}
                 amount={formatCurrency(-receipt.amount)}
                 rows={[
+                  { label: 'De', value: `${summary.holder.firstName} ${summary.holder.lastName}`.trim() },
                   { label: 'Para', value: receipt.recipient.name },
                   { label: 'CUIT/CUIL', value: formatCuit(receipt.recipient.cuit), mono: true },
                   { label: 'Entidad', value: receipt.recipient.bank },
@@ -113,17 +115,40 @@ function TransferContent({ summary }) {
                   { label: 'Tu saldo ahora', value: formatCurrency(summary.balance), mono: true },
                 ]}
               >
-                <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                  <button type="button" onClick={restart} className={secondaryActionClass}>
-                    Realizar otra transferencia
-                  </button>
+                <div className="grid gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => navigate(routes.home)}
-                    className={primaryActionClass}
+                    onClick={() =>
+                      downloadReceiptPdf({
+                        title: 'Comprobante de Transferencia enviada',
+                        operationId: receipt.id,
+                        amount: receipt.amount,
+                        createdAt: receipt.createdAt,
+                        senderName: `${summary.holder.firstName} ${summary.holder.lastName}`.trim(),
+                        recipientName: receipt.recipient.name,
+                        recipientCuit: receipt.recipient.cuit,
+                        recipientBank: receipt.recipient.bank,
+                        concept: receipt.detail,
+                      })
+                    }
+                    className="m-0 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#5B2EE0] bg-[#FAF8FE] text-sm font-semibold text-[#5B2EE0] transition-colors hover:bg-[#5B2EE0]/10 dark:border-[#5B2EE0] dark:bg-[#1E1735] dark:text-[#FFD54A] dark:hover:bg-[#281F45]"
                   >
-                    Volver al inicio
+                    <Download className="size-4" aria-hidden="true" />
+                    Descargar comprobante en PDF
                   </button>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button type="button" onClick={restart} className={secondaryActionClass}>
+                      Realizar otra transferencia
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(routes.home)}
+                      className={primaryActionClass}
+                    >
+                      Volver al inicio
+                    </button>
+                  </div>
                 </div>
               </ResultCard>
             </div>

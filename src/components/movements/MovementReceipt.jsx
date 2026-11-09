@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Dialog } from 'radix-ui';
-import { Check, CheckCircle2, Clock3, Copy, Share2, X } from 'lucide-react';
+import { Check, CheckCircle2, Clock3, Copy, Download, Share2, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { secondaryActionClass } from '@/components/forms/formStyles';
+import { downloadReceiptPdf } from '@/lib/pdfReceipt';
+import { useWalletStore } from '@/store/useWalletStore';
 import { iconTone, signedAmount, statusLabels } from './MovementRow';
 
 const kindLabels = {
@@ -57,6 +59,11 @@ export default function MovementReceipt({ movement, onClose }) {
 
   const isIncome = movement ? movement.amount > 0 : false;
   const status = movement ? statusLabels[movement.status] ?? statusLabels.completed : statusLabels.completed;
+  const holder = useWalletStore(state => state.summary?.holder);
+  const holderName = holder ? `${holder.firstName} ${holder.lastName}`.trim() : 'Tu cuenta';
+  const isTransfer = movement?.kind === 'transferIn' || movement?.kind === 'transferOut';
+  const senderName = isIncome ? (movement?.senderName || movement?.title?.replace(/^De\s+/i, '') || 'Titular remitente') : holderName;
+  const recipientName = isIncome ? holderName : (movement?.recipient?.name || movement?.title?.replace(/^Transferencia a\s+/i, '') || 'Destinatario');
 
   return (
     <Dialog.Root open={open} onOpenChange={value => !value && onClose()}>
@@ -119,6 +126,8 @@ export default function MovementReceipt({ movement, onClose }) {
                   {status.text}
                 </span>
               </ReceiptRow>
+              {isTransfer && <ReceiptRow label="De">{senderName}</ReceiptRow>}
+              {isTransfer && <ReceiptRow label="Para">{recipientName}</ReceiptRow>}
               <ReceiptRow label="Concepto">{movement.detail}</ReceiptRow>
               <ReceiptRow label="Fecha y hora">
                 <span className="font-mono text-xs sm:text-sm">{fullDateTime(movement.createdAt)}</span>
@@ -148,14 +157,35 @@ export default function MovementReceipt({ movement, onClose }) {
               </div>
             </dl>
 
-            <button
-              type="button"
-              onClick={share}
-              className={`${secondaryActionClass} mt-6 inline-flex items-center justify-center gap-2`}
-            >
-              <Share2 className="size-[18px]" aria-hidden="true" />
-              {copied === 'receipt' ? 'Comprobante copiado' : 'Compartir comprobante'}
-            </button>
+            <div className="mt-6 grid gap-2.5">
+              <button
+                type="button"
+                onClick={() =>
+                  downloadReceiptPdf({
+                    title: `Comprobante de ${kindLabels[movement.kind]?.toLowerCase() ?? 'movimiento'}`,
+                    operationId: movement.id,
+                    amount: Math.abs(movement.amount),
+                    createdAt: movement.createdAt,
+                    senderName: isIncome ? (movement.senderName || movement.title?.replace(/^De\s+/i, '') || 'Titular remitente') : 'Titular de la cuenta',
+                    recipientName: isIncome ? 'Tu cuenta padi.' : (movement.recipient?.name || movement.title?.replace(/^Transferencia a\s+/i, '') || 'Destinatario'),
+                    concept: movement.detail,
+                  })
+                }
+                className="m-0 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#5B2EE0] bg-[#FAF8FE] text-sm font-semibold text-[#5B2EE0] transition-colors hover:bg-[#5B2EE0]/10 dark:border-[#5B2EE0] dark:bg-[#1E1735] dark:text-[#FFD54A] dark:hover:bg-[#281F45]"
+              >
+                <Download className="size-4" aria-hidden="true" />
+                Descargar comprobante en PDF
+              </button>
+
+              <button
+                type="button"
+                onClick={share}
+                className={`${secondaryActionClass} inline-flex items-center justify-center gap-2`}
+              >
+                <Share2 className="size-[18px]" aria-hidden="true" />
+                {copied === 'receipt' ? 'Comprobante copiado' : 'Compartir comprobante'}
+              </button>
+            </div>
           </Dialog.Content>
         )}
       </Dialog.Portal>

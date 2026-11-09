@@ -1,30 +1,32 @@
-import { ArrowLeftRight, CreditCard, Home, ListOrdered, LogOut, Moon, QrCode, Sun, UserRound } from 'lucide-react';
+import { ArrowLeftRight, CreditCard, Home, ListOrdered, LogOut, Moon, QrCode, Store, Sun, UserRound } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Wordmark } from '@/components/auth/AuthLayout';
 import { routes, sectionFromPath } from '@/lib/routes';
-import { useSignOut } from '@/store/useAuthStore';
+import { isMerchantUser, useAuthStore, useSignOut } from '@/store/useAuthStore';
 import { useThemeStore } from '@/store/useThemeStore';
-
-const sections = [
-  [
-    { id: 'home', label: 'Inicio', icon: Home },
-    { id: 'movements', label: 'Movimientos', icon: ListOrdered },
-    { id: 'transfer', label: 'Transferir', icon: ArrowLeftRight },
-    { id: 'pay', label: 'Pagar con QR', icon: QrCode },
-  ],
-  [
-    { id: 'card', label: 'Mi tarjeta', icon: CreditCard },
-    { id: 'profile', label: 'Mi perfil', icon: UserRound },
-  ],
-];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const active = sectionFromPath(useLocation().pathname);
   const signOut = useSignOut();
+  const isMerchant = useAuthStore(state => isMerchantUser(state.session?.user));
   const { theme, toggleTheme } = useThemeStore();
   const isDark = theme === 'dark';
   const ThemeIcon = isDark ? Sun : Moon;
+
+  const sections = [
+    [
+      { id: 'home', label: 'Inicio', icon: Home },
+      { id: 'movements', label: 'Movimientos', icon: ListOrdered },
+      { id: 'transfer', label: 'Transferir', icon: ArrowLeftRight },
+      { id: 'pay', label: 'Pagar con QR', icon: QrCode },
+      ...(isMerchant ? [{ id: 'collections', label: 'Cobros', icon: Store }] : []),
+    ],
+    [
+      { id: 'card', label: 'Mi tarjeta', icon: CreditCard },
+      { id: 'profile', label: 'Mi perfil', icon: UserRound },
+    ],
+  ];
 
   return (
     <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col bg-[#1C1633] px-4 py-7 text-white lg:flex dark:border-r dark:border-[#261E3D] dark:bg-[#0E0A1A]">
