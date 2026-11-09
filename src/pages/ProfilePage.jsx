@@ -29,6 +29,7 @@ const profilePanelClass = `${panelClass} m-0 border-0 lg:dark:border-0`;
 function ProfileContent({ summary }) {
   const navigate = useNavigate();
   const [showAccountDetails, setShowAccountDetails] = useState(false);
+  const [changingType, setChangingType] = useState(false);
   const user = useAuthStore(state => state.session?.user);
   const setAccountType = useAuthStore(state => state.setAccountType);
   const isMerchant = isMerchantUser(user);
@@ -158,11 +159,14 @@ function ProfileContent({ summary }) {
                 </p>
                 <p className="m-0 text-[11px] text-[#8C87A3] dark:text-[#6E6888]">
                   {isMerchant
-                    ? 'Tenés habilitada la sección de Cobros y QR.'
+                    ? 'Tenés habilitados Cobros e Integraciones. Pasar a Personal revoca tu API Key activa.'
                     : 'Activá la sección de Cobros para generar links y QR.'}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {isMerchant && (
+                  <button type="button" onClick={() => navigate(routes.integrations)} className="rounded-full border border-violet-400 px-3 py-1.5 text-xs font-semibold text-violet-700 dark:text-violet-200">Integraciones</button>
+                )}
                 {isMerchant && (
                   <button
                     type="button"
@@ -176,16 +180,22 @@ function ProfileContent({ summary }) {
                 )}
                 <button
                   type="button"
-                  onClick={() => {
+                  disabled={changingType}
+                  onClick={async () => {
+                    setChangingType(true);
                     const nextType = isMerchant ? 'personal' : 'merchant';
-                    setAccountType(nextType);
-                    useNotificationStore.getState().notify({
+                    try {
+                      await setAccountType(nextType);
+                      useNotificationStore.getState().notify({
                       title: nextType === 'merchant' ? '¡Modalidad Vendedor activada!' : 'Modalidad Personal activada',
                       description: nextType === 'merchant'
-                        ? 'Se habilitaron las secciones de Cobros y QR en el menú y accesos rápidos.'
+                        ? 'Tu perfil vendedor quedó guardado. Ya podés usar Cobros e Integraciones.'
                         : 'Volviste al modo de cuenta personal.',
                       type: 'transfer',
                     });
+                    } catch (error) {
+                      useNotificationStore.getState().notify({ title: 'No pudimos cambiar la modalidad', description: error.message });
+                    } finally { setChangingType(false); }
                   }}
                   className="m-0 rounded-full border border-[#5B2EE0] px-3 py-1.5 text-xs font-semibold text-[#5B2EE0] transition-colors hover:bg-[#5B2EE0]/10 dark:border-[#FFD54A] dark:text-[#FFD54A] dark:hover:bg-[#FFD54A]/10"
                 >

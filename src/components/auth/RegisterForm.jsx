@@ -253,6 +253,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
       email: values.email.trim(),
       password: values.password,
       dni: values.dni.trim(),
+      accountType,
     };
 
     try {

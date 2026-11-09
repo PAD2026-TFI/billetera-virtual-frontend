@@ -31,6 +31,7 @@ const navIndexMap = {
   topUp: 6,
   profile: 7,
   sandbox: 8,
+  integrations: 9,
 };
 
 export const panelClass =
