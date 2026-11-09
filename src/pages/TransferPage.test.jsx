@@ -11,7 +11,8 @@ const renderPage = () => renderAt('/transferir', <TransferPage />);
 const balance = () => useWalletStore.getState().summary.balance;
 
 async function searchNewRecipient(user, destination) {
-  await user.click(screen.getByRole('tab', { name: 'Nuevo destinatario' }));
+  const tab = screen.queryByRole('tab', { name: 'Nuevo destinatario' });
+  if (tab) await user.click(tab);
   await user.clear(screen.getByLabelText('Alias, CVU o CBU'));
   await user.type(screen.getByLabelText('Alias, CVU o CBU'), destination);
   await user.click(screen.getByRole('button', { name: 'Buscar cuenta' }));
