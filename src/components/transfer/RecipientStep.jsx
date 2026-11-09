@@ -227,20 +227,24 @@ export default function RecipientStep({ account, onConfirm }) {
               <button
                 type="button"
                 onClick={handleToggleFrequent}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4C1DB8] transition-colors hover:text-[#3D1499] dark:text-[#FFD54A] dark:hover:text-[#FFE664]"
+                className={`m-0 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B2EE0]/30 ${
+                  isSavedFrequent
+                    ? 'border-[#FFD54A]/60 bg-[#FFF9E5] text-[#7A5400] hover:bg-[#FFF3CC] dark:border-[#FFD54A]/30 dark:bg-[#2A2010] dark:text-[#FFD54A] dark:hover:bg-[#342814]'
+                    : 'border-[#ECE9F5] bg-white text-[#4A4560] hover:border-[#5B2EE0]/40 hover:text-[#5B2EE0] dark:border-[#261E3D] dark:bg-[#1E1735] dark:text-[#9D97B5] dark:hover:text-[#F4F2FA]'
+                }`}
               >
                 <Star
-                  className={`size-4 ${
+                  className={`size-3.5 ${
                     isSavedFrequent
-                      ? "fill-[#FFD54A] text-[#FFD54A] dark:fill-[#FFD54A]"
-                      : "text-[#8C87A3] dark:text-[#9D97B5]"
+                      ? 'fill-[#FFD54A] text-[#FFD54A]'
+                      : 'text-[#8C87A3] dark:text-[#9D97B5]'
                   }`}
                   aria-hidden="true"
                 />
                 <span>
                   {isSavedFrequent
-                    ? "Guardado en contactos frecuentes"
-                    : "Guardar en contactos frecuentes"}
+                    ? 'Guardado en contactos frecuentes'
+                    : 'Guardar en contactos frecuentes'}
                 </span>
               </button>
             </div>

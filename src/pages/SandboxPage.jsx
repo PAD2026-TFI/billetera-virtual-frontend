@@ -63,7 +63,7 @@ export default function SandboxPage() {
       if (p.status === 'Approved') await loadWallet();
     });
   }
-  return <main>
+  return <main className="sandbox-main">
     <header><div><p className="eyebrow">Billetera virtual · entorno de pruebas</p><h1>Mi billetera</h1></div>
       <button className="secondary" onClick={signOut} disabled={busy}>Cerrar sesión</button></header>
     <p className="notice">Pruebas con Mercado Pago: usá exclusivamente cuentas y medios de pago de prueba. No se habilita dinero real.</p>
