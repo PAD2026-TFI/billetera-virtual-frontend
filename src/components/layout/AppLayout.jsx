@@ -104,15 +104,17 @@ export default function AppLayout({ header, children, fitViewportMobile = false 
     }
   }
 
+  const renderSlot = (slot, arg) => (typeof slot === 'function' ? slot(arg) : slot);
+
   const currentSlideContent = summary ? (
     <>
-      {header(summary)}
+      {renderSlot(header, summary)}
       <main
         className={`m-0 ${
           fitViewportMobile ? 'mt-2 flex flex-1 min-h-0 flex-col lg:mt-10' : 'mt-7 lg:mt-10'
         } max-w-none p-0 flex-1 min-h-0`}
       >
-        {children(summary)}
+        {renderSlot(children, summary)}
       </main>
     </>
   ) : null;

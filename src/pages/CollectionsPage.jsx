@@ -25,13 +25,12 @@ import {
 } from '@/components/forms/formStyles';
 import { formatCurrency, formatDateTime } from '@/lib/formatters';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/money';
-import { api } from '@/services/api';
+import { api, API_BASE } from '@/services/api';
 import { isLiveSession } from '@/services/mocks/walletService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWalletStore } from '@/store/useWalletStore';
 
-export default function CollectionsPage() {
-  const { summary } = useWalletStore();
+function CollectionsContent({ summary }) {
   const sessionUser = useAuthStore(state => state.session?.user);
 
   const [amountInput, setAmountInput] = useState('');
@@ -128,26 +127,13 @@ export default function CollectionsPage() {
 
   const qrImageUrl = activeLink
     ? isLiveSession()
-      ? `https://localhost:7081/api/v1/public/payment-links/${activeLink.token}/qr`
+      ? `${API_BASE}/api/v1/public/payment-links/${activeLink.token}/qr`
       : null
     : null;
 
   return (
-    <AppLayout
-      header={
-        <PageHeader
-          title="Cobros y Ventas"
-          badge={
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD54A]/25 px-2.5 py-0.5 text-xs font-semibold text-[#7A5400] ring-1 ring-inset ring-[#E5B822]/40 dark:bg-[#FFD54A]/15 dark:text-[#FFD54A] dark:ring-[#FFD54A]/30">
-              <Store className="size-3.5 stroke-[2.2]" />
-              Comercio activo
-            </span>
-          }
-        />
-      }
-    >
-      <div className="grid gap-6 lg:grid-cols-12">
-        <section className={`lg:col-span-5 ${panelClass} flex flex-col justify-between`}>
+    <div className="grid gap-6 lg:grid-cols-12">
+      <section className={`lg:col-span-5 ${panelClass} flex flex-col justify-between`}>
           <div>
             <div className="flex items-center gap-2 text-[#4C1DB8] dark:text-[#FFD54A]">
               <Sparkles className="size-5" />
@@ -395,9 +381,28 @@ export default function CollectionsPage() {
                 })}
               </ul>
             )}
-          </div>
-        </section>
-      </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function CollectionsPage() {
+  return (
+    <AppLayout
+      header={() => (
+        <PageHeader
+          title="Cobros y Ventas"
+          badge={
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFD54A]/25 px-2.5 py-0.5 text-xs font-semibold text-[#7A5400] ring-1 ring-inset ring-[#E5B822]/40 dark:bg-[#FFD54A]/15 dark:text-[#FFD54A] dark:ring-[#FFD54A]/30">
+              <Store className="size-3.5 stroke-[2.2]" />
+              Comercio activo
+            </span>
+          }
+        />
+      )}
+    >
+      {summary => <CollectionsContent summary={summary} />}
     </AppLayout>
   );
 }
