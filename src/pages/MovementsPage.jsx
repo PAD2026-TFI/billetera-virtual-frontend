@@ -162,7 +162,7 @@ export function MovementsContent({ movements, now }) {
           )}
         </div>
 
-        <div className="flex items-center justify-between border-b border-[#ECE9F5] pb-3 dark:border-[#261E3D]">
+        <div className="flex flex-col gap-1 border-b border-[#ECE9F5] pb-3 sm:flex-row sm:items-center sm:justify-between dark:border-[#261E3D]">
           <h2 className="m-0 text-base font-bold tracking-tight text-[#1C1633] lg:text-lg dark:text-[#F4F2FA]" aria-live="polite">
             {filtered.length} {filtered.length === 1 ? 'movimiento' : 'movimientos'}
           </h2>
