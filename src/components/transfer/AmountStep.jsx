@@ -79,7 +79,7 @@ export default function AmountStep({ balance, draft, onBack, onContinue }) {
         <div
           role="group"
           aria-label="Montos rápidos"
-          className="-mt-1 flex gap-2 overflow-x-auto pb-1 custom-scrollbar"
+          className="-mt-1 flex flex-wrap items-center gap-2 pb-1"
         >
           {presetAmounts.map(value => (
             <button key={value} type="button" onClick={() => choose(value)} className={pillClass}>
