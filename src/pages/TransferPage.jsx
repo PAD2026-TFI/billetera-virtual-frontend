@@ -64,15 +64,17 @@ function TransferContent({ summary }) {
   }
 
   return (
-    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_350px] lg:items-stretch lg:gap-7">
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_350px] lg:items-start lg:gap-7">
       <section
         aria-label="Transferencia"
-        className={`m-0 flex flex-col justify-between gap-4 p-4 sm:p-6 lg:gap-6 lg:p-7 ${panelClass}`}
+        className={`m-0 flex flex-col gap-5 lg:gap-6 ${panelClass}`}
       >
-        <TransferStepper current={step} />
-        {step < 3 && <h2 className={`${sectionTitleClass} m-0 tracking-tight`}>{stepTitles[step]}</h2>}
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <TransferStepper current={step} />
+          {step < 3 && <h2 className={`${sectionTitleClass} m-0 tracking-tight`}>{stepTitles[step]}</h2>}
+        </div>
 
-        <div className="flex flex-col justify-between gap-4">
+        <div className="flex flex-col gap-4">
           {step === 0 && (
             <RecipientStep
               account={summary.account}
@@ -162,7 +164,7 @@ function TransferContent({ summary }) {
 
       <aside
         aria-label="Condiciones de la transferencia"
-        className={`hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-6 ${panelClass}`}
+        className={`hidden lg:flex lg:flex-col lg:gap-5 ${panelClass}`}
       >
         <div className="flex flex-col gap-5">
           <div className="relative overflow-hidden rounded-[22px] bg-gradient-to-br from-[#231052] via-[#170A38] to-[#0D0620] p-5 text-white shadow-[0_20px_40px_-20px_rgba(37,16,87,0.8)] ring-1 ring-inset ring-white/15">
