@@ -76,9 +76,10 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   const [toast, setToast] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [verifiedIndex, setVerifiedIndex] = useState(-1);
+  const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isCodeVerified, setIsCodeVerified] = useState(false);
+  const [verificationToken, setVerificationToken] = useState("");
+  const isCodeVerified = Boolean(verificationToken);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -137,31 +138,6 @@ export default function RegisterForm({ onRegistered, onCancel }) {
     }
   }, [step]);
 
-  useEffect(() => {
-    const fullCode = otp.join("");
-    if (fullCode.length === 6 && !isCodeVerified && !isVerifying) {
-      setIsVerifying(true);
-      setVerifiedIndex(-1);
-
-      for (let i = 0; i < 6; i++) {
-        setTimeout(
-          () => {
-            setVerifiedIndex(i);
-          },
-          (i + 1) * 110,
-        );
-      }
-
-      setTimeout(
-        () => {
-          setIsVerifying(false);
-          setIsCodeVerified(true);
-        },
-        6 * 110 + 200,
-      );
-    }
-  }, [otp, isCodeVerified, isVerifying]);
-
   async function handleStep1Submit(e) {
     e.preventDefault();
     const valid = await trigger(["firstName", "lastName", "dni"]);
@@ -172,27 +148,53 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   }
 
   async function handleSendCode(e) {
-    e?.preventDefault();
+    e.preventDefault();
+    if (isSendingCode || isVerifying) return;
     const valid = await trigger("email");
     if (!valid) return;
+
     setServerError("");
-    setCountdown(60);
-    setToast("¡Código enviado! Revisá tu casilla de correo.");
-    setOtp(["", "", "", "", "", ""]);
-    setVerifiedIndex(-1);
-    setIsCodeVerified(false);
-    setStep(3);
+    setToast("");
+    setIsSendingCode(true);
+    try {
+      const response = await api("/api/v1/auth/email-verification", {
+        method: "POST",
+        token: null,
+        body: { email: getValues("email").trim() },
+      });
+      setCountdown(response.retryAfterSeconds);
+      setToast("Si el correo puede registrarse, te va a llegar un código.");
+      setOtp(["", "", "", "", "", ""]);
+      setVerificationToken("");
+      setStep(3);
+      otpRefs.current[0]?.focus();
+    } catch (error) {
+      setServerError(error.message || "No pudimos enviar el código. Reintentá en unos minutos.");
+    } finally {
+      setIsSendingCode(false);
+    }
   }
 
-  function handleResendCode() {
-    setCountdown(60);
-    setToast("¡Código reenviado! Revisá tu casilla de correo.");
-    setOtp(["", "", "", "", "", ""]);
-    setVerifiedIndex(-1);
-    setIsCodeVerified(false);
-    setTimeout(() => {
-      otpRefs.current[0]?.focus();
-    }, 100);
+  async function handleVerifyCode() {
+    const code = otp.join("");
+    if (code.length !== 6 || isVerifying || isSendingCode) return;
+
+    setServerError("");
+    setIsVerifying(true);
+    try {
+      const response = await api("/api/v1/auth/email-verification/confirm", {
+        method: "POST",
+        token: null,
+        body: { email: getValues("email").trim(), code },
+      });
+      if (!response?.verificationToken) throw new Error("No se pudo confirmar el código.");
+      setVerificationToken(response.verificationToken);
+      setToast("");
+    } catch (error) {
+      setServerError(error.message || "No pudimos verificar el código.");
+    } finally {
+      setIsVerifying(false);
+    }
   }
 
   function handleOtpChange(index, value) {
@@ -254,6 +256,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
       password: values.password,
       dni: values.dni.trim(),
       accountType,
+      emailVerificationToken: verificationToken,
     };
 
     try {
@@ -277,40 +280,18 @@ export default function RegisterForm({ onRegistered, onCancel }) {
       });
       setShowSuccessModal(true);
     } catch (error) {
-      if (error?.status) {
-        setServerError(
-          error.message || "Ocurrió un error al registrar la cuenta.",
-        );
-        if (
-          error.code === "EMAIL_ALREADY_REGISTERED" ||
-          error.fieldErrors?.email
-        ) {
-          setStep(2);
-        } else if (
-          error.code === "DNI_ALREADY_REGISTERED" ||
-          error.fieldErrors?.dni
-        ) {
-          setStep(1);
-        } else {
-          setStep(4);
-        }
-      } else if (import.meta.env.MODE === "test") {
-        const mockId = "user-" + Date.now();
-        setStoredAccountType(body.email, accountType);
-        setStoredAccountType(mockId, accountType);
-        setRegisteredUser({
-          id: mockId,
-          firstName: body.firstName || "Usuario",
-          lastName: body.lastName || "",
-          email: body.email,
-          dni: body.dni,
-          accountType,
-        });
-        setShowSuccessModal(true);
+      setServerError(error.message || "Ocurrió un error al registrar la cuenta.");
+      if (error.code === "EMAIL_VERIFICATION_REQUIRED") {
+        setVerificationToken("");
+        setOtp(["", "", "", "", "", ""]);
+        setCountdown(0);
+        setStep(3);
+      } else if (error.code === "EMAIL_ALREADY_REGISTERED" || error.fieldErrors?.email) {
+        setVerificationToken("");
+        setStep(2);
+      } else if (error.code === "DNI_ALREADY_REGISTERED" || error.fieldErrors?.dni) {
+        setStep(1);
       } else {
-        setServerError(
-          error?.message || "Ocurrió un error inesperado. Por favor reintentá.",
-        );
         setStep(4);
       }
     } finally {
@@ -557,6 +538,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                 id="reg-email"
                 type="email"
                 autoComplete="email"
+                disabled={isSendingCode}
                 placeholder="nombre@correo.com"
                 className={inputClass}
                 aria-invalid={!!errors.email}
@@ -569,8 +551,8 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               )}
             </div>
 
-            <Button type="submit" className={`${primaryButtonClass} mt-1.5`}>
-              Enviar código
+            <Button type="submit" disabled={isSendingCode} className={`${primaryButtonClass} mt-1.5`}>
+              {isSendingCode ? "Enviando código…" : "Enviar código"}
               <ArrowRight className="size-4" />
             </Button>
           </form>
@@ -600,9 +582,12 @@ export default function RegisterForm({ onRegistered, onCancel }) {
         >
           <button
             type="button"
+            disabled={isSendingCode || isVerifying}
             onClick={() => {
               setStep(2);
               setToast("");
+              setServerError("");
+              setVerificationToken("");
             }}
             className="mb-1.5 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-[#5B2EE0] transition-colors hover:text-[#3D1499] focus:outline-none"
           >
@@ -614,14 +599,14 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             Ingresá el código
           </h1>
           <p className="mt-0.5 mb-3 text-xs text-[#8C87A3]">
-            Enviamos un código de 6 dígitos a{" "}
+            Ingresá el código de 6 dígitos que recibiste en{" "}
             <strong className="text-[#1C1633]">{watch("email") || ""}</strong>
           </p>
 
           <div className="mb-3.5 flex items-center justify-between gap-1.5">
             {otp.map((digit, i) => {
               const isFilled = !!digit;
-              const isVerified = verifiedIndex >= i;
+              const isVerified = isCodeVerified;
               return (
                 <input
                   key={i}
@@ -631,7 +616,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
                   pattern="[0-9]*"
                   maxLength={1}
                   value={digit}
-                  disabled={isCodeVerified || isVerifying}
+                  disabled={isCodeVerified || isVerifying || isSendingCode}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}
                   onPaste={i === 0 ? handleOtpPaste : undefined}
@@ -661,7 +646,8 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             ) : (
               <button
                 type="button"
-                onClick={handleResendCode}
+                onClick={handleSendCode}
+                disabled={isSendingCode || isVerifying || isCodeVerified}
                 className="cursor-pointer border-0 bg-transparent p-0 text-xs font-semibold text-[#5B2EE0] transition-colors hover:text-[#3D1499] focus:outline-none"
               >
                 Reenviar código
@@ -677,6 +663,12 @@ export default function RegisterForm({ onRegistered, onCancel }) {
               <Loader2 className="size-4 animate-spin" />
               Verificando código...
             </div>
+          )}
+
+          {!isCodeVerified && !isVerifying && (
+            <Button type="button" onClick={handleVerifyCode} disabled={otp.join("").length !== 6 || isSendingCode} className={primaryButtonClass}>
+              Verificar código
+            </Button>
           )}
 
           {isCodeVerified && (
