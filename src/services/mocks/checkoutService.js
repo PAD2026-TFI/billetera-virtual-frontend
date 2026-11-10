@@ -38,6 +38,34 @@ const paymentLinks = {
 };
 
 const expirations = new Map();
+const pendingCardPayments = new Map();
+
+function cardPaymentKey(token) {
+  const storageKey = `padi-card-payment:${token}`;
+  let key = pendingCardPayments.get(token);
+  try {
+    key = sessionStorage.getItem(storageKey) || key;
+  } catch {
+    // El reintento en la misma página sigue disponible si el navegador bloquea el almacenamiento.
+  }
+  key ||= crypto.randomUUID();
+  pendingCardPayments.set(token, key);
+  try {
+    sessionStorage.setItem(storageKey, key);
+  } catch {
+    // La clave queda en memoria.
+  }
+  return key;
+}
+
+function finishCardPayment(token) {
+  pendingCardPayments.delete(token);
+  try {
+    sessionStorage.removeItem(`padi-card-payment:${token}`);
+  } catch {
+    // El navegador puede deshabilitar sessionStorage.
+  }
+}
 
 export function registerMockPaymentLink(link) {
   if (!link || !link.token) return;
@@ -134,36 +162,35 @@ function receiptFor(token, paymentMethod, extra = {}) {
 export async function payCheckoutWithCard(token, card) {
   if (!isMockToken(token)) {
     const digits = onlyDigits(card.number);
-    const [rawMonth, rawYear] = String(card.expiry || '12/30').split('/');
-    const expirationMonth = Number(rawMonth) || 12;
-    const expirationYear = Number(rawYear?.length === 2 ? `20${rawYear}` : rawYear) || 2030;
+    const [month, year] = card.expiry.split('/').map(Number);
 
     try {
-      const res = await api('/api/v1/public/checkout/payments', {
+      const res = await api('/api/v1/public/checkout/padi-card-payments', {
         method: 'POST',
-        key: crypto.randomUUID(),
+        token: null,
+        key: cardPaymentKey(token),
         body: {
           token,
-          paymentMethod: 'Card',
           card: {
             cardNumber: digits,
-            cardHolderName: card.holder || 'TITULAR',
-            expirationMonth,
-            expirationYear,
-            cvv: card.cvv || '123',
+            cardHolderName: card.holder,
+            expirationMonth: month,
+            expirationYear: 2000 + year,
+            cvv: card.cvv,
           },
         },
       });
+      finishCardPayment(token);
       return {
-        paymentId: res.paymentId || res.id || crypto.randomUUID(),
-        token: res.token || token,
+        paymentId: res.paymentId,
+        token: res.token,
         amount: Number(res.amount),
-        currency: res.currency || 'ARS',
+        currency: res.currency,
         paymentMethod: 'Card',
         status: 'Approved',
-        paidAt: res.completedAt || res.paidAt || new Date().toISOString(),
-        authorizationCode: res.authorizationCode || 'AUTH-OK',
-        cardBrand: detectCardBrand(digits),
+        paidAt: res.paidAt,
+        authorizationCode: res.authorizationCode,
+        cardBrand: 'Padi',
         cardLast4: digits.slice(-4),
       };
     } catch (error) {

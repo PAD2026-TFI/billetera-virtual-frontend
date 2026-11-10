@@ -28,6 +28,8 @@ import {
   sectionTitleClass,
 } from '@/components/forms/formStyles';
 import { formatDate } from '@/lib/formatters';
+import { formatCardNumber } from '@/lib/cards';
+import { api } from '@/services/api';
 import { mockTiming, wait } from '@/services/mocks/walletService';
 import { useWalletStore } from '@/store/useWalletStore';
 
@@ -146,10 +148,30 @@ async function geolocate(address) {
 const formatAddress = address =>
   `${address.street} ${address.number}${address.unit ? `, ${address.unit}` : ''}, ${address.city}, ${address.province} (${address.postalCode})`;
 
-function CardFace({ holderName, lastDigits, expiry, showDetails, onToggleDetails }) {
+function CardFace({ cardId, holderName, lastDigits, expiry }) {
   const [copied, setCopied] = useState(false);
-  const fullCardNumber = `4532 8912 3456 ${lastDigits}`;
-  const cvv = '742';
+  const [details, setDetails] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState('');
+  const showDetails = details !== null;
+  const fullCardNumber = showDetails ? formatCardNumber(details.cardNumber) : '';
+
+  async function toggleDetails() {
+    if (showDetails) {
+      setDetails(null);
+      setCopied(false);
+      return;
+    }
+    setDetailsError('');
+    setLoading(true);
+    try {
+      setDetails(await api(`/api/v1/me/cards/${cardId}/virtual-credentials`, { method: 'POST' }));
+    } catch (error) {
+      setDetailsError(error.message || 'No pudimos obtener los datos de tu tarjeta.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function copyNumber() {
     navigator.clipboard?.writeText(fullCardNumber.replace(/\s+/g, ''));
@@ -197,7 +219,7 @@ function CardFace({ holderName, lastDigits, expiry, showDetails, onToggleDetails
 
             {showDetails && (
               <span className="rounded-full bg-[#FFD54A]/20 px-3 py-1 font-mono text-xs font-bold text-[#FFD54A]">
-                CVV: {cvv}
+                CVV: {details.cvv}
               </span>
             )}
           </div>
@@ -249,12 +271,14 @@ function CardFace({ holderName, lastDigits, expiry, showDetails, onToggleDetails
 
       <button
         type="button"
-        onClick={onToggleDetails}
+        onClick={toggleDetails}
+        disabled={loading || !cardId}
         className="m-0 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border-0 bg-[#F3F1F9] px-4 text-xs font-semibold text-[#4C1DB8] transition-colors hover:bg-[#E9E5F6] sm:text-sm dark:bg-[#1E1735] dark:text-[#FFD54A] dark:hover:bg-[#281F45]"
       >
         {showDetails ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-        {showDetails ? 'Ocultar datos de la tarjeta' : 'Mostrar datos de la tarjeta'}
+        {loading ? 'Consultando datos…' : showDetails ? 'Ocultar datos de la tarjeta' : 'Mostrar datos de la tarjeta'}
       </button>
+      {detailsError && <p role="alert" className="m-0 text-sm">{detailsError}</p>}
     </div>
   );
 }
@@ -522,7 +546,6 @@ function AddressForm({ onValidated, onCancel }) {
 
 function CardContent({ summary }) {
   const requestPhysicalCard = useWalletStore(state => state.requestPhysicalCard);
-  const [showDetails, setShowDetails] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const [validated, setValidated] = useState(null);
   const [sending, setSending] = useState(false);
@@ -552,11 +575,11 @@ function CardContent({ summary }) {
           </div>
 
           <CardFace
+            key={summary.card.virtualCardId}
+            cardId={summary.card.virtualCardId}
             holderName={fullName}
             lastDigits={summary.card.lastDigits}
             expiry={summary.card.expiry}
-            showDetails={showDetails}
-            onToggleDetails={() => setShowDetails(prev => !prev)}
           />
         </div>
 
