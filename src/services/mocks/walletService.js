@@ -185,7 +185,9 @@ export async function fetchWalletSummary() {
     });
   }
 
-  const primaryCard = Array.isArray(cards) && cards.length > 0 ? cards[0] : null;
+  const availableCards = Array.isArray(cards) ? cards : [];
+  const padiCard = availableCards.find(card => card.type === 'Debit' && card.brand === 'VISA DÉBITO');
+  const primaryCard = padiCard ?? availableCards[0];
   const expMonth = String(primaryCard?.expirationMonth || 12).padStart(2, '0');
   const expYear = String(primaryCard?.expirationYear || 2030).slice(-2);
 
@@ -224,6 +226,7 @@ export async function fetchWalletSummary() {
     },
     card: {
       id: primaryCard?.id,
+      virtualCardId: padiCard?.id,
       lastDigits: primaryCard?.cardNumberLast4 || '4821',
       expiry: `${expMonth}/${expYear}`,
       status: primaryCard ? (primaryCard.isActive ? 'active' : 'blocked') : 'active',
