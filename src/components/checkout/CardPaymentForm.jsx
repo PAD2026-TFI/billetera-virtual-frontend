@@ -6,19 +6,18 @@ import { CreditCard, FlaskConical, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Field from '@/components/forms/Field';
 import { fieldInputClass, primaryActionClass } from '@/components/forms/formStyles';
-import { cardNumberLength, cvvLength, formatCardNumber, formatExpiry, isExpired, isValidLuhn, onlyDigits } from '@/lib/cards';
+import { formatCardNumber, formatExpiry, isExpired, isValidLuhn, onlyDigits } from '@/lib/cards';
 import { formatCurrency } from '@/lib/formatters';
 import { testCards } from '@/services/mocks/checkoutService';
 import CardPreview from './CardPreview';
 
 const cardSchema = z
   .object({
-    number: z.string().refine(value => onlyDigits(value).length === cardNumberLength(value) && isValidLuhn(value), 'Revisá el número de la tarjeta.'),
+    number: z.string().refine(value => onlyDigits(value).length === 16 && isValidLuhn(value), 'Revisá el número de la tarjeta.'),
     holder: z.string().trim().min(3, 'Ingresá el nombre como figura en la tarjeta.'),
     expiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'Usá el formato MM/AA.').refine(value => !isExpired(value), 'La tarjeta está vencida.'),
-    cvv: z.string(),
-  })
-  .refine(card => new RegExp(`^\\d{${cvvLength(card.number)}}$`).test(card.cvv), { message: 'Revisá el código de seguridad.', path: ['cvv'] });
+    cvv: z.string().regex(/^\d{3}$/, 'Revisá el código de seguridad.'),
+  });
 
 const inputClass = `${fieldInputClass} font-mono h-11 rounded-xl`;
 
@@ -42,6 +41,7 @@ export default function CardPaymentForm({ amount, onPay }) {
 
   return (
     <form onSubmit={handleSubmit(onPay)} noValidate className="m-0 flex flex-col gap-4">
+      <p className="m-0 text-sm">Ingresá los datos de tu tarjeta virtual desde Mi tarjeta en Padi.</p>
       <div className="grid gap-4">
         <CardPreview number={card.number} holder={card.holder} expiry={card.expiry} cvv={card.cvv} flipped={flipped} />
 
@@ -90,7 +90,7 @@ export default function CardPaymentForm({ amount, onPay }) {
                 inputMode="numeric"
                 autoComplete="off"
                 placeholder="CVV"
-                maxLength={4}
+                maxLength={3}
                 className={inputClass}
                 aria-invalid={!!errors.cvv}
                 onFocus={() => setFlipped(true)}
