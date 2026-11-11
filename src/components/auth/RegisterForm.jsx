@@ -246,9 +246,9 @@ export default function RegisterForm({
           body: { email: emailVal },
         },
       );
-      setCountdown(response.retryAfterSeconds);
+      setCountdown(response?.retryAfterSeconds || 60);
       setToast(
-        "Si el correo puede registrarse, te va a llegar un código.",
+        "Te enviamos un código de verificación a tu correo.",
       );
       setOtp(["", "", "", "", "", ""]);
       setVerificationToken("");
@@ -894,9 +894,17 @@ export default function RegisterForm({
                 autoComplete='email'
                 disabled={isSendingCode}
                 placeholder='nombre@correo.com'
-                className={inputClass}
-                aria-invalid={!!errors.email}
-                {...register("email")}
+                className={cn(
+                  inputClass,
+                  serverError &&
+                    "!border-2 !border-red-500 !bg-red-50/30 !ring-2 !ring-red-400/40",
+                )}
+                aria-invalid={!!errors.email || !!serverError}
+                {...register("email", {
+                  onChange: () => {
+                    if (serverError) setServerError("");
+                  },
+                })}
               />
               {errors.email && (
                 <p
