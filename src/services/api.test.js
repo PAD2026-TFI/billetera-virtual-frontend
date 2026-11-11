@@ -53,6 +53,18 @@ describe('manejo centralizado de errores', () => {
     respond(409, { code: 'DNI_ALREADY_REGISTERED' });
     await expect(api('/api/v1/auth/register', { method: 'POST', body: {} }))
       .rejects.toThrow('Este DNI ya está registrado. Revisá el número o iniciá sesión con tu cuenta.');
+
+    respond(422, { code: 'IDENTITY_NOT_FOUND' });
+    await expect(api('/api/v1/auth/validate-identity', { method: 'POST', body: {} }))
+      .rejects.toThrow('Los datos del documento no pudieron ser autenticados ante OpenRENAPER. Revisá el número ingresado.');
+
+    respond(422, { code: 'IDENTITY_MISMATCH' });
+    await expect(api('/api/v1/auth/validate-identity', { method: 'POST', body: {} }))
+      .rejects.toThrow('Los nombres y apellidos no coinciden con los registros oficiales de tu documento.');
+
+    respond(503, { code: 'IDENTITY_PROVIDER_UNAVAILABLE' });
+    await expect(api('/api/v1/auth/validate-identity', { method: 'POST', body: {} }))
+      .rejects.toThrow('El servicio de validación de identidad no está disponible temporalmente. Reintentá en unos minutos.');
   });
   it('un 401 con sesión la cierra y avisa que venció', async () => {
     useAuthStore.setState({ session: { token: 'jwt', user: {}, expiresAt: Date.now() + 60000 } });

@@ -17,7 +17,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from 'cn';
 import { Divider } from './LoginForm.jsx';
 import { primaryButtonClass, secondaryButtonClass } from './styles.js';
-import OpenRenaperModal from './OpenRenaperModal.jsx';
 
 export default function DniScanStep({
   onComplete,
@@ -33,7 +32,6 @@ export default function DniScanStep({
   const [cameraActive, setCameraActive] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const [showRenaperModal, setShowRenaperModal] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -90,7 +88,6 @@ export default function DniScanStep({
       } else {
         setBackCaptured(true);
         setIsScanning(false);
-        setTimeout(() => setShowRenaperModal(true), 350);
       }
     }, 1200);
   }
@@ -159,7 +156,7 @@ export default function DniScanStep({
           {backCaptured ? (
             <CheckCircle2 className="size-3.5 text-emerald-600" />
           ) : (
-            <IdCard className="size-3.5 text-[#5B2EE0]" />
+            <Fingerprint className="size-3.5 text-[#5B2EE0]" />
           )}
           <span>Dorso</span>
           {backCaptured && (
@@ -168,7 +165,7 @@ export default function DniScanStep({
         </button>
       </div>
 
-      <div className="relative mx-auto h-48 w-full overflow-hidden rounded-2xl bg-[#090613] shadow-md ring-1 ring-[#261E3D]">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[#090613] shadow-md">
         {cameraActive ? (
           <video
             ref={videoRef}
@@ -178,96 +175,76 @@ export default function DniScanStep({
             className="size-full object-cover"
           />
         ) : (
-          <div className="flex size-full flex-col items-center justify-center bg-gradient-to-b from-[#1C1633] via-[#120E24] to-[#090613] text-white">
-            <div className="flex size-11 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
-              <Camera className="size-5 text-[#FFD54A]" />
+          <div className="flex size-full flex-col items-center justify-center bg-gradient-to-br from-[#1F1738] to-[#120B24] p-4 text-center">
+            <div className="relative mb-3 flex size-14 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+              <IdCard className="size-7 text-[#FFD54A]" />
+              <VideoOff className="absolute -top-1 -right-1 size-4 text-white/60" />
             </div>
-            <p className="mt-2 mb-0 text-[11px] font-medium text-white/70">
-              Vista previa de cámara
+            <p className="m-0 text-xs font-semibold text-white">
+              Cámara no disponible
+            </p>
+            <p className="mt-1 mb-0 max-w-[240px] text-[11px] text-white/60">
+              Podés continuar usando la simulación de escaneo para completar el
+              registro.
             </p>
           </div>
         )}
 
-        <svg
-          className="pointer-events-none absolute inset-0 size-full"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <mask id="dni-cutout-mask">
-              <rect width="100%" height="100%" fill="white" />
-              <rect
-                x="8%"
-                y="10%"
-                width="84%"
-                height="80%"
-                rx="14"
-                fill="black"
-              />
-            </mask>
-          </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill="rgba(9, 6, 19, 0.68)"
-            mask="url(#dni-cutout-mask)"
-          />
-        </svg>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center p-4">
+          <div className="relative aspect-[1.586/1] w-[88%] max-w-[320px] rounded-xl border-2 border-dashed border-white/70 shadow-[0_0_0_9999px_rgba(9,6,19,0.55)]">
+            <div className="absolute -top-1 -left-1 size-3.5 rounded-tl-sm border-t-2 border-l-2 border-[#FFD54A]" />
+            <div className="absolute -top-1 -right-1 size-3.5 rounded-tr-sm border-t-2 border-r-2 border-[#FFD54A]" />
+            <div className="absolute -bottom-1 -left-1 size-3.5 rounded-bl-sm border-b-2 border-l-2 border-[#FFD54A]" />
+            <div className="absolute -bottom-1 -right-1 size-3.5 rounded-br-sm border-b-2 border-r-2 border-[#FFD54A]" />
 
-        <div className="pointer-events-none absolute inset-y-[10%] inset-x-[8%] rounded-[14px]">
-          <div
-            className={cn(
-              'size-full rounded-[14px] border-2 transition-all duration-300',
-              isCurrentSideCaptured
-                ? 'border-emerald-400/90 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
-                : isScanning
-                  ? 'border-[#FFD54A] shadow-[0_0_15px_rgba(255,213,74,0.4)]'
-                  : 'border-white/60'
-            )}
-          >
-            <span className="absolute -top-0.5 -left-0.5 size-4 rounded-tl-[12px] border-t-3 border-l-3 border-[#FFD54A]" />
-            <span className="absolute -top-0.5 -right-0.5 size-4 rounded-tr-[12px] border-t-3 border-r-3 border-[#FFD54A]" />
-            <span className="absolute -bottom-0.5 -left-0.5 size-4 rounded-bl-[12px] border-b-3 border-l-3 border-[#FFD54A]" />
-            <span className="absolute -bottom-0.5 -right-0.5 size-4 rounded-br-[12px] border-b-3 border-r-3 border-[#FFD54A]" />
-
-            {side === 'front' ? (
-              <div className="flex size-full items-center justify-between p-3.5 opacity-35">
-                <div className="flex size-14 items-center justify-center rounded-xl border border-dashed border-white/80 bg-white/10">
-                  <User className="size-7 text-white" />
-                </div>
-                <div className="flex flex-1 flex-col gap-1.5 pl-3">
-                  <div className="h-2 w-20 rounded-full bg-white/70" />
-                  <div className="h-2 w-28 rounded-full bg-white/70" />
-                  <div className="h-2 w-16 rounded-full bg-white/50" />
-                  <div className="mt-1 h-2 w-24 rounded-full bg-white/40" />
-                </div>
+            <div className="absolute inset-0 flex flex-col justify-between p-2.5 text-[9px] text-white/60">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold tracking-wider uppercase text-white/80">
+                  {side === 'front' ? 'DNI · Frente' : 'DNI · Dorso'}
+                </span>
+                <span className="font-mono text-[8px]">REPÚBLICA ARGENTINA</span>
               </div>
-            ) : (
-              <div className="flex size-full flex-col justify-between p-3.5 opacity-35">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-1">
-                    <div className="h-1.5 w-16 rounded-full bg-white/70" />
-                    <div className="h-1.5 w-24 rounded-full bg-white/50" />
+
+              {side === 'front' ? (
+                <div className="flex items-end justify-between">
+                  <div className="flex size-10 items-center justify-center rounded-md bg-white/10 ring-1 ring-white/20">
+                    <User className="size-5 text-white/70" />
                   </div>
-                  <Fingerprint className="size-8 text-white" />
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="h-1.5 w-16 rounded-full bg-white/30" />
+                    <div className="h-1.5 w-20 rounded-full bg-white/30" />
+                    <div className="h-1.5 w-12 rounded-full bg-[#FFD54A]/70" />
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  {[...Array(14)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        'h-5 rounded-sm bg-white/70',
-                        i % 2 === 0 ? 'w-1' : 'w-1.5'
-                      )}
-                    />
-                  ))}
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="flex size-7 items-center justify-center rounded bg-white/10 ring-1 ring-white/20">
+                      <Fingerprint className="size-4 text-white/70" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="h-1.5 w-full rounded-full bg-white/30" />
+                      <div className="h-1.5 w-3/4 rounded-full bg-white/30" />
+                    </div>
+                  </div>
+                  <div className="rounded bg-white/5 p-1 font-mono text-[7px] tracking-widest text-white/50">
+                    IDARG&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
+
+          {!cameraActive && (
+            <p className="mt-2 mb-0 text-[11px] font-medium text-white/70">
+              Vista previa de cámara
+            </p>
+          )}
 
           {isScanning && (
             <motion.div
-              animate={{ y: [0, 140, 0] }}
+              initial={{ top: '10%' }}
+              animate={{ top: '90%' }}
               transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
               className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[#FFD54A] to-transparent shadow-[0_0_12px_#FFD54A]"
             />
@@ -285,9 +262,9 @@ export default function DniScanStep({
       </div>
 
       <div className="mt-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[11px] text-[#4A4560]">
-          <ShieldCheck className="size-3.5 text-emerald-600" />
-          <span>Servicio de validación provisto por OpenRENAPER</span>
+        <div className="flex items-center gap-1.5 text-[11px] text-[#6B6485] dark:text-[#9D97B5]">
+          <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>Servicio provisto por OpenRENAPER</span>
         </div>
 
         {isCurrentSideCaptured && (
@@ -326,11 +303,11 @@ export default function DniScanStep({
         ) : (
           <Button
             type="button"
-            onClick={() => setShowRenaperModal(true)}
+            onClick={onComplete}
             className={primaryButtonClass}
           >
-            Validar con OpenRENAPER
-            <ShieldCheck className="size-4" />
+            Continuar a validación facial
+            <ArrowRight className="size-4" />
           </Button>
         )}
       </div>
@@ -347,22 +324,6 @@ export default function DniScanStep({
           </Button>
         </>
       )}
-
-      <OpenRenaperModal
-        open={showRenaperModal}
-        dni={dni}
-        onContinue={() => {
-          setShowRenaperModal(false);
-          onComplete?.();
-        }}
-        onRetry={() => {
-          setShowRenaperModal(false);
-          setFrontCaptured(false);
-          setBackCaptured(false);
-          setSide('front');
-        }}
-        onOpenChange={setShowRenaperModal}
-      />
     </div>
   );
 }

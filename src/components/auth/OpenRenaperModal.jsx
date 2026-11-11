@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import openRenaperLogo from "@/assets/openrenaper-logo.png";
 import { primaryButtonClass } from "./styles.js";
 
@@ -17,25 +18,27 @@ export default function OpenRenaperModal({
   open,
   dni = "",
   initialStatus = "validating",
-  validationDuration = 1200,
+  validationDuration = 1500,
   onContinue,
   onRetry,
   onOpenChange,
 }) {
   const [status, setStatus] = useState(initialStatus);
+  const [manualOverride, setManualOverride] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setStatus(initialStatus);
+      setManualOverride(false);
       return;
     }
 
-    if (status === "validating") {
+    if (status === "validating" && !manualOverride) {
       const isTestEnv = typeof process !== "undefined" && process.env?.NODE_ENV === "test";
       const delay = isTestEnv ? 40 : validationDuration;
 
       const timer = setTimeout(() => {
-        if (dni === "00000000") {
+        if (dni === "00000000" || dni === "0") {
           setStatus("error");
         } else {
           setStatus("success");
@@ -44,13 +47,19 @@ export default function OpenRenaperModal({
 
       return () => clearTimeout(timer);
     }
-  }, [open, status, initialStatus, validationDuration, dni]);
+  }, [open, status, initialStatus, validationDuration, dni, manualOverride]);
+
+  function switchStatus(next) {
+    setManualOverride(true);
+    setStatus(next);
+  }
 
   function handleContinue() {
     onContinue?.();
   }
 
   function handleRetry() {
+    setManualOverride(false);
     setStatus("validating");
     onRetry?.();
   }
@@ -67,6 +76,48 @@ export default function OpenRenaperModal({
           transition={{ type: "spring", damping: 22, stiffness: 260 }}
           className="flex flex-col items-center"
         >
+          <div className="mb-2 flex w-full items-center justify-center gap-1 rounded-full bg-[#F3F1F9] p-1 text-[11px] font-semibold dark:bg-[#1E1735]">
+            <span className="px-1.5 text-[10px] uppercase tracking-wider text-[#8C87A3]">
+              Probar estado:
+            </span>
+            <button
+              type="button"
+              onClick={() => switchStatus("validating")}
+              className={cn(
+                "cursor-pointer rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
+                status === "validating"
+                  ? "bg-[#5B2EE0] text-white shadow-xs"
+                  : "text-[#4A4560] hover:text-[#1C1633] dark:text-[#9D97B5] dark:hover:text-white"
+              )}
+            >
+              Validando
+            </button>
+            <button
+              type="button"
+              onClick={() => switchStatus("success")}
+              className={cn(
+                "cursor-pointer rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
+                status === "success"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-[#4A4560] hover:text-[#1C1633] dark:text-[#9D97B5] dark:hover:text-white"
+              )}
+            >
+              Éxito
+            </button>
+            <button
+              type="button"
+              onClick={() => switchStatus("error")}
+              className={cn(
+                "cursor-pointer rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
+                status === "error"
+                  ? "bg-red-600 text-white shadow-xs"
+                  : "text-[#4A4560] hover:text-[#1C1633] dark:text-[#9D97B5] dark:hover:text-white"
+              )}
+            >
+              Error
+            </button>
+          </div>
+
           <div className="mb-2 flex flex-col items-center gap-2">
             <div className="flex h-12 w-auto max-w-[210px] items-center justify-center rounded-2xl border border-[#ECE9F5] bg-white px-4 py-2 shadow-xs dark:border-white/10 dark:bg-white/95">
               <img
