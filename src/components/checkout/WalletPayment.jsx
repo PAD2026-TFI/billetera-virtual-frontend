@@ -43,6 +43,22 @@ export default function WalletPayment({ amount, onPay }) {
     );
   }
 
+  if (!summary && status === 'error') {
+    return (
+      <div role="alert" className="grid gap-3 rounded-2xl border border-[#ECE9F5] bg-[#F8F7FD] p-5 text-center dark:border-[#261E3D] dark:bg-[#1E1735]/60">
+        <p className="m-0 text-sm font-semibold text-[#1C1633] dark:text-[#F4F2FA]">No pudimos consultar tu saldo.</p>
+        <p className="m-0 text-xs text-[#4A4560] dark:text-[#9D97B5]">Revisá tu conexión o pagá con tarjeta.</p>
+        <button
+          type="button"
+          onClick={loadSummary}
+          className={`${secondaryActionClass} mx-auto h-10 rounded-full px-5 text-xs font-semibold`}
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
   if (!summary) {
     return (
       <div className="grid h-52 place-items-center">
@@ -69,9 +85,9 @@ export default function WalletPayment({ amount, onPay }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3.5">
-        <div className="flex items-center justify-between rounded-2xl border border-[#ECE9F5] bg-[#F8F7FD] px-4 py-2.5 dark:border-[#261E3D] dark:bg-[#1E1735]/60">
-          <div className="flex items-center gap-2.5 min-w-0">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3.5">
+        <div className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-[#ECE9F5] bg-[#F8F7FD] px-4 py-2.5 dark:border-[#261E3D] dark:bg-[#1E1735]/60">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#4C1DB8] to-[#6C3BF4] text-xs font-bold text-white shadow-xs">
               {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
             </span>
@@ -87,20 +103,20 @@ export default function WalletPayment({ amount, onPay }) {
           <button
             type="button"
             onClick={() => navigate(routes.login, { state: { from: location } })}
-            className="m-0 border-0 bg-transparent p-0 text-xs font-semibold text-[#4C1DB8] transition-colors hover:text-[#3D1499] dark:text-[#FFD54A] dark:hover:text-[#FFE664]"
+            className="m-0 shrink-0 border-0 bg-transparent p-0 text-xs font-semibold text-[#4C1DB8] transition-colors hover:text-[#3D1499] dark:text-[#FFD54A] dark:hover:text-[#FFE664]"
           >
             Cambiar
           </button>
         </div>
 
         <dl className="m-0 flex items-center justify-between gap-4 rounded-2xl border border-[#ECE9F5] bg-[#F8F7FD] p-4 sm:p-5 dark:border-[#261E3D] dark:bg-[#1E1735]/60">
-          <dt className="flex items-center gap-3 text-sm font-medium text-[#4A4560] dark:text-[#9D97B5]">
-            <span className="grid size-10 place-items-center rounded-xl bg-[#4C1DB8]/10 text-[#4C1DB8] dark:bg-[#5B2EE0]/20 dark:text-[#FFD54A]">
+          <dt className="flex min-w-0 items-center gap-3 text-sm font-medium text-[#4A4560] dark:text-[#9D97B5]">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#4C1DB8]/10 text-[#4C1DB8] dark:bg-[#5B2EE0]/20 dark:text-[#FFD54A]">
               <Wallet className="size-5" aria-hidden="true" />
             </span>
             Tu saldo disponible
           </dt>
-          <dd className="m-0 font-mono text-2xl font-bold tracking-tight text-[#1C1633] dark:text-[#F4F2FA]">
+          <dd className="m-0 shrink-0 font-mono text-xl font-bold tracking-tight whitespace-nowrap text-[#1C1633] sm:text-2xl dark:text-[#F4F2FA]">
             {formatCurrency(summary.balance)}
           </dd>
         </dl>

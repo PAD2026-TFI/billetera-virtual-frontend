@@ -59,40 +59,48 @@ function persistSession(session) {
   }
 }
 
+async function startSession(set, { accessToken, expiresIn }, credentials, explicitAccountType) {
+  const user = await api("/api/v1/me/profile", { token: accessToken });
+  const emailKey = (credentials?.email || user?.email || '').trim().toLowerCase();
+  const isExplicitMerchant = explicitAccountType === 'merchant';
+  const isStoredMerchant =
+    isMerchantUser(user) ||
+    (emailKey && isMerchantUser({ email: emailKey })) ||
+    (user?.id && isMerchantUser({ id: user.id }));
+  const accountType = ['merchant', 'personal'].includes(user.accountType)
+    ? user.accountType
+    : isExplicitMerchant || isStoredMerchant ? 'merchant' : 'personal';
+
+  if (accountType === 'merchant') {
+    setStoredAccountType(null, 'merchant');
+    if (user?.id) setStoredAccountType(user.id, 'merchant');
+    if (user?.email) setStoredAccountType(user.email, 'merchant');
+    if (emailKey) setStoredAccountType(emailKey, 'merchant');
+  }
+
+  const session = {
+    token: accessToken,
+    user: { ...user, accountType },
+    expiresAt: Date.now() + expiresIn * 1000,
+  };
+  persistSession(session);
+  set({ session });
+}
+
 export const useAuthStore = create((set, get) => ({
   session: readStoredSession(),
 
   signIn: async (credentials, explicitAccountType) => {
     try {
-      const { accessToken, expiresIn } = await api("/api/v1/auth/login", {
+      const result = await api("/api/v1/auth/login", {
         method: "POST",
         body: credentials,
       });
-      const user = await api("/api/v1/me/profile", { token: accessToken });
-      const emailKey = (credentials?.email || user?.email || '').trim().toLowerCase();
-      const isExplicitMerchant = explicitAccountType === 'merchant';
-      const isStoredMerchant =
-        isMerchantUser(user) ||
-        (emailKey && isMerchantUser({ email: emailKey })) ||
-        (user?.id && isMerchantUser({ id: user.id }));
-      const accountType = ['merchant', 'personal'].includes(user.accountType)
-        ? user.accountType
-        : isExplicitMerchant || isStoredMerchant ? 'merchant' : 'personal';
-
-      if (accountType === 'merchant') {
-        setStoredAccountType(null, 'merchant');
-        if (user?.id) setStoredAccountType(user.id, 'merchant');
-        if (user?.email) setStoredAccountType(user.email, 'merchant');
-        if (emailKey) setStoredAccountType(emailKey, 'merchant');
+      if (result?.twoFactorRequired) {
+        return { twoFactorRequired: true, challengeToken: result.challengeToken };
       }
-
-      const session = {
-        token: accessToken,
-        user: { ...user, accountType },
-        expiresAt: Date.now() + expiresIn * 1000,
-      };
-      persistSession(session);
-      set({ session });
+      await startSession(set, result, credentials, explicitAccountType);
+      return { twoFactorRequired: false };
     } catch (e) {
       if (e?.status || import.meta.env.MODE !== "test") throw e;
       const email = (credentials?.email || "usuario@padi.com").trim().toLowerCase();
@@ -117,6 +125,14 @@ export const useAuthStore = create((set, get) => ({
       persistSession(session);
       set({ session });
     }
+  },
+
+  completeTwoFactor: async ({ challengeToken, code }, credentials, explicitAccountType) => {
+    const result = await api('/api/v1/auth/login/two-factor', {
+      method: 'POST',
+      body: { challengeToken, code },
+    });
+    await startSession(set, result, credentials, explicitAccountType);
   },
 
   setAccountType: async (accountType) => {

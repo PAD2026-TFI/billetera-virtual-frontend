@@ -53,13 +53,13 @@ export default function ReviewStep({
         <dl className="m-0 divide-y divide-[#ECE9F5] rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] px-4 text-xs dark:divide-[#251C3D] dark:border-[#261E3D] dark:bg-[#19122C]">
           {rows.map(row => (
             <div key={row.label} className="flex items-center justify-between gap-3 py-2.5">
-              <dt className="text-[11px] text-[#6E6888] dark:text-[#9D97B5]">{row.label}</dt>
+              <dt className="shrink-0 text-[11px] text-[#6E6888] dark:text-[#9D97B5]">{row.label}</dt>
               <dd
-                className={`m-0 text-right text-xs font-semibold ${
+                className={`m-0 min-w-0 text-right text-xs font-semibold ${
                   row.highlight
                     ? 'inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-700 ring-1 ring-inset ring-emerald-500/20 dark:bg-emerald-400/15 dark:text-emerald-300'
                     : 'text-[#1C1633] dark:text-[#F4F2FA]'
-                } ${row.mono ? 'font-mono' : ''}`}
+                } ${row.mono ? 'font-mono break-all' : 'break-words'}`}
               >
                 {row.value}
               </dd>

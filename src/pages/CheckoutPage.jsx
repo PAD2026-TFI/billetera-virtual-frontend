@@ -24,8 +24,10 @@ const closedLinkMessages = {
   Cancelled: 'El comercio canceló este link de pago.',
 };
 
+const closingCodes = ['LINK_NOT_PAYABLE', 'PAYMENT_LINK_ALREADY_PAID', 'PAYMENT_LINK_EXPIRED'];
+
 const cardContainerClass =
-  'rounded-[28px] border border-[#ECE9F5] bg-white p-6 shadow-[0_20px_50px_rgba(76,29,184,0.06)] dark:border-[#261E3D] dark:bg-[#140F24] dark:shadow-[0_0_40px_rgba(91,46,224,0.12)] sm:p-7 flex flex-col gap-6';
+  'rounded-[28px] border border-[#ECE9F5] bg-white p-6 shadow-[0_20px_50px_rgba(76,29,184,0.06)] dark:border-[#261E3D] dark:bg-[#140F24] dark:shadow-[0_0_40px_rgba(91,46,224,0.12)] sm:p-7 flex min-w-0 flex-col gap-6';
 
 function CheckoutShell({ children }) {
   const session = useAuthStore(state => state.session);
@@ -133,6 +135,13 @@ export default function CheckoutPage() {
     try {
       setReceipt(await request());
     } catch (failure) {
+      if (closingCodes.includes(failure?.code)) {
+        const current = await fetchCheckoutLink(token).catch(() => null);
+        if (current && !current.isPayable) {
+          setLink(current);
+          return;
+        }
+      }
       setError(failure.message);
     }
   }
@@ -177,7 +186,7 @@ export default function CheckoutPage() {
           aria-labelledby="payment-title"
           className={cardContainerClass}
         >
-          <div className="grid gap-6">
+          <div className="grid min-w-0 gap-6">
             <div className="flex items-center justify-between gap-4">
               <h2 id="payment-title" className="m-0 text-xl font-bold tracking-tight text-[#1C1633] dark:text-[#F4F2FA]">
                 Elegí cómo pagar
@@ -220,18 +229,18 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <Tabs.Root value={method} onValueChange={chooseMethod} className="flex flex-col gap-6">
+                <Tabs.Root value={method} onValueChange={chooseMethod} className="flex min-w-0 flex-col gap-6">
                   <Tabs.List aria-label="Medio de pago" className="flex gap-1.5 rounded-full border border-[#ECE9F5] bg-[#F3F1F9] p-1.5 dark:border-[#261E3D] dark:bg-[#1E1735]">
                     <Tabs.Trigger
                       value="wallet"
-                      className="m-0 flex h-11 flex-1 items-center justify-center gap-2 rounded-full border-0 bg-transparent px-4 text-sm font-semibold text-[#4A4560] transition-all data-[state=active]:bg-white data-[state=active]:text-[#4C1DB8] data-[state=active]:shadow-sm dark:text-[#9D97B5] dark:data-[state=active]:bg-[#281F45] dark:data-[state=active]:text-[#F4F2FA]"
+                      className="m-0 flex h-11 flex-1 items-center justify-center gap-2 rounded-full border-0 bg-transparent px-3 text-sm font-semibold whitespace-nowrap sm:px-4 text-[#4A4560] transition-all data-[state=active]:bg-white data-[state=active]:text-[#4C1DB8] data-[state=active]:shadow-sm dark:text-[#9D97B5] dark:data-[state=active]:bg-[#281F45] dark:data-[state=active]:text-[#F4F2FA]"
                     >
                       <Wallet className="size-4 shrink-0" aria-hidden="true" />
                       Saldo de padi.
                     </Tabs.Trigger>
                     <Tabs.Trigger
                       value="card"
-                      className="m-0 flex h-11 flex-1 items-center justify-center gap-2 rounded-full border-0 bg-transparent px-4 text-sm font-semibold text-[#4A4560] transition-all data-[state=active]:bg-white data-[state=active]:text-[#4C1DB8] data-[state=active]:shadow-sm dark:text-[#9D97B5] dark:data-[state=active]:bg-[#281F45] dark:data-[state=active]:text-[#F4F2FA]"
+                      className="m-0 flex h-11 flex-1 items-center justify-center gap-2 rounded-full border-0 bg-transparent px-3 text-sm font-semibold whitespace-nowrap sm:px-4 text-[#4A4560] transition-all data-[state=active]:bg-white data-[state=active]:text-[#4C1DB8] data-[state=active]:shadow-sm dark:text-[#9D97B5] dark:data-[state=active]:bg-[#281F45] dark:data-[state=active]:text-[#F4F2FA]"
                     >
                       <CreditCard className="size-4 shrink-0" aria-hidden="true" />
                       Tarjeta

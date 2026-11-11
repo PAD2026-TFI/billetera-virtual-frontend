@@ -51,8 +51,11 @@ describe('Mi perfil', () => {
 
   it('permite activar modalidad vendedor y navegar a cobros', async () => {
     const user = userEvent.setup();
+    const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async url =>
+      String(url).includes('/api/v1/me/account-type')
+        ? new Response(JSON.stringify({ accountType: 'merchant' }), { status: 200 })
+        : new Response(JSON.stringify({ title: 'No encontrado' }), { status: 404 }));
     renderAt('/perfil');
-    const request = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify({ accountType: 'merchant' }), { status: 200 }));
     const activateButton = await screen.findByRole('button', { name: 'Activar Vendedor' });
     await user.click(activateButton);
 

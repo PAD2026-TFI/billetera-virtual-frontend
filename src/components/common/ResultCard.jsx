@@ -17,8 +17,8 @@ export default function ResultCard({ tone = 'success', title, amount, rows = [],
         <dl className="m-0 divide-y divide-[#ECE9F5] rounded-2xl bg-[#F8F7FD] px-4 text-left dark:divide-[#261E3D] dark:bg-[#1E1735]">
           {rows.map(row => (
             <div key={row.label} className="flex items-center justify-between gap-4 py-3">
-              <dt className="text-sm text-[#8C87A3] dark:text-[#9D97B5]">{row.label}</dt>
-              <dd className={`m-0 text-right text-sm font-medium text-[#1C1633] dark:text-[#F4F2FA] ${row.mono ? 'font-mono' : ''}`}>{row.value}</dd>
+              <dt className="shrink-0 text-sm text-[#8C87A3] dark:text-[#9D97B5]">{row.label}</dt>
+              <dd className={`m-0 min-w-0 text-right text-sm font-medium text-[#1C1633] dark:text-[#F4F2FA] ${row.mono ? 'font-mono break-all' : 'break-words'}`}>{row.value}</dd>
             </div>
           ))}
         </dl>

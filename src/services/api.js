@@ -30,7 +30,13 @@ const codeMessages = {
   INVALID_ADDRESS: 'Revisá los datos del domicilio de entrega.',
   MERCHANT_REQUIRED: 'Activá la modalidad Vendedor desde Mi perfil.',
   INTEGRATION_CONFLICT: 'La integración cambió. Actualizá su estado antes de volver a intentar.',
-  WALLET_UNAVAILABLE: 'Necesitás una billetera activa para generar una API Key.'
+  WALLET_UNAVAILABLE: 'Necesitás una billetera activa para generar una API Key.',
+  LINK_NOT_PAYABLE: 'Este link de pago ya no admite pagos o el medio elegido no está habilitado.',
+  ALIAS_ALREADY_EXISTS: 'Ese alias ya está en uso. Probá con otro.',
+  INVALID_CARD_DATA: 'Revisá los datos de la tarjeta.',
+  INVALID_CARD_REQUEST: 'No pudimos validar el domicilio de entrega. Revisá los datos.',
+  UNAUTHORIZED: 'No tenés permiso para usar este medio de pago.',
+  NOT_FOUND: 'No encontramos el medio de pago seleccionado.'
 };
 const sessionExpiredMessage = 'Tu sesión venció. Iniciá sesión de nuevo.';
 const forbiddenMessage = 'No tenés permisos para realizar esta acción.';
