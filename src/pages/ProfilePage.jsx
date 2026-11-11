@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import AppLayout, { PageHeader, panelClass } from '@/components/layout/AppLayout';
 import AccountDetails from '@/components/dashboard/AccountDetails';
+import TwoFactorSettings from '@/components/security/TwoFactorSettings';
 import { sectionTitleClass } from '@/components/forms/formStyles';
 import { routes } from '@/lib/routes';
 import { isMerchantUser, useAuthStore, useSignOut } from '@/store/useAuthStore';
@@ -318,6 +319,8 @@ function ProfileContent({ summary }) {
                 Activo
               </span>
             </div>
+
+            <TwoFactorSettings />
           </div>
 
           <div className="border-t border-[#ECE9F5] pt-4 dark:border-[#261E3D]">
