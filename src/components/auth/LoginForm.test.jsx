@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import LoginForm from './LoginForm.jsx';
 import ForgotPasswordForm from './ForgotPasswordForm.jsx';
 
@@ -39,37 +39,106 @@ describe('LoginForm', () => {
   });
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+const json = (body, status = 200) =>
+  new Response(body === null ? null : JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+async function requestCode(user, email = 'usuario@test.com') {
+  await user.type(screen.getByLabelText('Correo electrónico'), email);
+  await user.click(screen.getByRole('button', { name: 'Enviar código' }));
+  await screen.findByRole('heading', { name: 'Elegí una contraseña nueva' });
+}
+
+async function fillReset(user, code, password = 'NuevaClave1') {
+  await user.click(screen.getByLabelText('Dígito 1'));
+  await user.paste(code);
+  await user.type(screen.getByLabelText('Contraseña nueva'), password);
+  await user.type(screen.getByLabelText('Repetir contraseña'), password);
+  await user.click(screen.getByRole('button', { name: 'Cambiar contraseña' }));
+}
+
 describe('ForgotPasswordForm', () => {
   it('muestra error en línea si se envía con el campo de correo vacío', async () => {
     const user = userEvent.setup();
     render(<ForgotPasswordForm onBack={() => {}} />);
 
-    await user.click(screen.getByRole('button', { name: 'Enviar enlace' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar código' }));
     expect(await screen.findByText('Ingresá tu correo electrónico.')).toBeInTheDocument();
   });
 
-  it('permite ingresar el correo y abre el modal de confirmación al enviar', async () => {
+  it('envía el código por correo y cambia la contraseña con el código recibido', async () => {
+    const request = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(json({ retryAfterSeconds: 60 }, 202))
+      .mockResolvedValueOnce(json({ reset: true }));
     const handleBack = vi.fn();
     const user = userEvent.setup();
     render(<ForgotPasswordForm onBack={handleBack} />);
 
     expect(screen.getByRole('heading', { name: 'Recuperar contraseña' })).toBeInTheDocument();
+    await requestCode(user);
+    expect(request).toHaveBeenNthCalledWith(1, expect.stringContaining('/api/v1/auth/password-reset'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'usuario@test.com' }) }));
+    expect(screen.getByText('usuario@test.com')).toBeInTheDocument();
+    expect(screen.getByText(/Reenviar código en/)).toBeInTheDocument();
 
-    const emailInput = screen.getByLabelText('Correo electrónico');
-    await user.type(emailInput, 'usuario@test.com');
+    await fillReset(user, '123456');
+    expect(request).toHaveBeenNthCalledWith(2, expect.stringContaining('/api/v1/auth/password-reset/confirm'),
+      expect.objectContaining({ body: JSON.stringify({ email: 'usuario@test.com', code: '123456', newPassword: 'NuevaClave1' }) }));
+    expect(await screen.findByRole('heading', { name: 'Contraseña actualizada' })).toBeInTheDocument();
 
-    const submitBtn = screen.getByRole('button', { name: 'Enviar enlace' });
-    await user.click(submitBtn);
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+    await waitFor(() => expect(handleBack).toHaveBeenCalled());
+  });
 
-    const modalTitle = await screen.findByRole('heading', { name: 'Enlace enviado' });
-    expect(modalTitle).toBeInTheDocument();
-    expect(screen.getByText(/usuario@test\.com/)).toBeInTheDocument();
+  it('avisa si el código es incorrecto y deja reintentar', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(json({ retryAfterSeconds: 60 }, 202))
+      .mockResolvedValueOnce(json({ title: 'El código es incorrecto o venció. Revisalo o pedí otro.', code: 'PASSWORD_RESET_CODE_INVALID' }, 400));
+    const user = userEvent.setup();
+    render(<ForgotPasswordForm onBack={() => {}} />);
 
-    const entendidoBtn = screen.getByRole('button', { name: 'Entendido' });
-    await user.click(entendidoBtn);
+    await requestCode(user);
+    await fillReset(user, '000000');
+    expect(await screen.findByRole('alert')).toHaveTextContent('El código es incorrecto o venció. Revisalo o pedí otro.');
+    expect(screen.getByLabelText('Dígito 1')).toHaveValue('');
+    expect(screen.queryByRole('heading', { name: 'Contraseña actualizada' })).not.toBeInTheDocument();
+  });
 
-    await waitFor(() => {
-      expect(handleBack).toHaveBeenCalledTimes(1);
-    });
+  it('no deja cambiar la contraseña si no cumple los requisitos', async () => {
+    const request = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(json({ retryAfterSeconds: 60 }, 202));
+    const user = userEvent.setup();
+    render(<ForgotPasswordForm onBack={() => {}} />);
+
+    await requestCode(user);
+    await fillReset(user, '123456', 'corta');
+    expect(await screen.findByText('Mínimo 8 caracteres.')).toBeInTheDocument();
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it('reparte en las casillas un código escrito de a uno o autocompletado entero', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(json({ retryAfterSeconds: 60 }, 202));
+    const user = userEvent.setup();
+    render(<ForgotPasswordForm onBack={() => {}} />);
+
+    await requestCode(user);
+    await user.type(screen.getByLabelText('Dígito 1'), '1234');
+    expect(['1', '2', '3', '4'].map((_, i) => screen.getByLabelText(`Dígito ${i + 1}`).value)).toEqual(['1', '2', '3', '4']);
+
+    fireEvent.change(screen.getByLabelText('Dígito 1'), { target: { value: '654321' } });
+    expect([1, 2, 3, 4, 5, 6].map(i => screen.getByLabelText(`Dígito ${i}`).value).join('')).toBe('654321');
+  });
+
+  it('explica en español si el servidor todavía no tiene la recuperación', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(json({ title: 'Unauthorized', code: 'HTTP_401' }, 401));
+    const user = userEvent.setup();
+    render(<ForgotPasswordForm onBack={() => {}} />);
+
+    await user.type(screen.getByLabelText('Correo electrónico'), 'usuario@test.com');
+    await user.click(screen.getByRole('button', { name: 'Enviar código' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('La recuperación de contraseña no está disponible en este momento.');
+    expect(screen.queryByText('Unauthorized')).not.toBeInTheDocument();
   });
 });

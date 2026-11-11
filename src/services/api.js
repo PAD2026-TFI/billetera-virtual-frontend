@@ -36,7 +36,8 @@ const codeMessages = {
   INVALID_CARD_DATA: 'Revisá los datos de la tarjeta.',
   INVALID_CARD_REQUEST: 'No pudimos validar el domicilio de entrega. Revisá los datos.',
   UNAUTHORIZED: 'No tenés permiso para usar este medio de pago.',
-  NOT_FOUND: 'No encontramos el medio de pago seleccionado.'
+  NOT_FOUND: 'No encontramos el medio de pago seleccionado.',
+  RATE_LIMITED: 'Hiciste muchos intentos seguidos. Esperá un minuto y probá de nuevo.'
 };
 const sessionExpiredMessage = 'Tu sesión venció. Iniciá sesión de nuevo.';
 const forbiddenMessage = 'No tenés permisos para realizar esta acción.';

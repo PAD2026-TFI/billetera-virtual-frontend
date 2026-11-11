@@ -905,7 +905,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
   );
 }
 
-function RequirementItem({ met, text }) {
+export function RequirementItem({ met, text }) {
   return (
     <div
       className={cn(
