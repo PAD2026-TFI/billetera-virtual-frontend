@@ -21,6 +21,7 @@ export default function OpenRenaperModal({
   onContinue,
   onRetry,
   onOpenChange,
+  errorMessage,
 }) {
   const [status, setStatus] = useState(initialStatus);
 
@@ -142,8 +143,15 @@ export default function OpenRenaperModal({
                 Validación no exitosa
               </h2>
               <p className="mt-1.5 mb-0 text-[13px] leading-relaxed text-[#4A4560] dark:text-[#9D97B5]">
-                Los datos del documento no pudieron ser autenticados ante OpenRENAPER. Por favor, volvé a capturar el DNI con buena iluminación.
+                {errorMessage ||
+                  "No encontramos registros coincidentes para este DNI en el padrón de OpenRENAPER. Verificá que el número de documento sea correcto o reintentá la validación."}
               </p>
+              {dni && (
+                <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-2.5 py-1 text-xs text-red-700 dark:bg-rose-950/40 dark:text-rose-300">
+                  <span className="text-[#8C87A3]">Documento no encontrado:</span>
+                  <span className="font-mono font-semibold">{dni}</span>
+                </div>
+              )}
               <Button
                 type="button"
                 onClick={handleRetry}
