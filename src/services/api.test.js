@@ -45,6 +45,15 @@ describe('manejo centralizado de errores', () => {
     await expect(api('/api/auth/login', { method: 'POST', body: {} })).rejects.toThrow('Correo o contraseña incorrectos.');
     expect(toastTitles()).toEqual([]);
   });
+  it('traduce los códigos de correo y DNI ya registrados', async () => {
+    respond(409, { code: 'EMAIL_ALREADY_REGISTERED' });
+    await expect(api('/api/v1/auth/register', { method: 'POST', body: {} }))
+      .rejects.toThrow('Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.');
+
+    respond(409, { code: 'DNI_ALREADY_REGISTERED' });
+    await expect(api('/api/v1/auth/register', { method: 'POST', body: {} }))
+      .rejects.toThrow('Este DNI ya está registrado. Revisá el número o iniciá sesión con tu cuenta.');
+  });
   it('un 401 con sesión la cierra y avisa que venció', async () => {
     useAuthStore.setState({ session: { token: 'jwt', user: {}, expiresAt: Date.now() + 60000 } });
     respond(401, {});

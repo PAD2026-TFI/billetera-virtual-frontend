@@ -17,12 +17,14 @@ import { Button } from '@/components/ui/button';
 import { cn } from 'cn';
 import { Divider } from './LoginForm.jsx';
 import { primaryButtonClass, secondaryButtonClass } from './styles.js';
+import OpenRenaperModal from './OpenRenaperModal.jsx';
 
 export default function DniScanStep({
   onComplete,
   onBack,
   onCancel,
   backLabel = 'Volver a contraseña',
+  dni = '',
 }) {
   const [side, setSide] = useState('front');
   const [frontCaptured, setFrontCaptured] = useState(false);
@@ -31,6 +33,7 @@ export default function DniScanStep({
   const [cameraActive, setCameraActive] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const [showRenaperModal, setShowRenaperModal] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -87,6 +90,7 @@ export default function DniScanStep({
       } else {
         setBackCaptured(true);
         setIsScanning(false);
+        setTimeout(() => setShowRenaperModal(true), 350);
       }
     }, 1200);
   }
@@ -283,7 +287,7 @@ export default function DniScanStep({
       <div className="mt-2.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[11px] text-[#4A4560]">
           <ShieldCheck className="size-3.5 text-emerald-600" />
-          <span>Validación oficial sincronizada con RENAPER</span>
+          <span>Servicio de validación provisto por OpenRENAPER</span>
         </div>
 
         {isCurrentSideCaptured && (
@@ -322,11 +326,11 @@ export default function DniScanStep({
         ) : (
           <Button
             type="button"
-            onClick={onComplete}
+            onClick={() => setShowRenaperModal(true)}
             className={primaryButtonClass}
           >
-            Continuar a validación facial
-            <ArrowRight className="size-4" />
+            Validar con OpenRENAPER
+            <ShieldCheck className="size-4" />
           </Button>
         )}
       </div>
@@ -343,6 +347,22 @@ export default function DniScanStep({
           </Button>
         </>
       )}
+
+      <OpenRenaperModal
+        open={showRenaperModal}
+        dni={dni}
+        onContinue={() => {
+          setShowRenaperModal(false);
+          onComplete?.();
+        }}
+        onRetry={() => {
+          setShowRenaperModal(false);
+          setFrontCaptured(false);
+          setBackCaptured(false);
+          setSide('front');
+        }}
+        onOpenChange={setShowRenaperModal}
+      />
     </div>
   );
 }

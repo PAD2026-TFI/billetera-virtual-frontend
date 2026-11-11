@@ -12,8 +12,9 @@ const codeMessages = {
   PAYMENT_NOT_FOUND: 'La carga no existe o no pertenece a tu cuenta.',
   PROVIDER_UNAVAILABLE: 'No pudimos consultar Mercado Pago. Conservamos tu operación.',
   PROVIDER_TIMEOUT: 'La consulta está demorada. No vuelvas a pagar sin verificar el estado.',
-  EMAIL_ALREADY_REGISTERED: 'Ya existe una cuenta registrada con este correo electrónico.',
-  DNI_ALREADY_REGISTERED: 'Ya existe una cuenta registrada con este documento.',
+  EMAIL_ALREADY_REGISTERED: 'Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.',
+  DNI_ALREADY_REGISTERED: 'Este DNI ya está registrado. Revisá el número o iniciá sesión con tu cuenta.',
+  EMAIL_VERIFICATION_UNAVAILABLE: 'El servicio de envío de correos no está disponible temporalmente.',
   INSUFFICIENT_FUNDS: 'No tenés saldo suficiente para realizar esta operación.',
   SAME_WALLET: 'No podés transferir dinero a tu propia cuenta.',
   DESTINATION_UNAVAILABLE: 'La cuenta de destino no existe o no está disponible.',
@@ -53,7 +54,7 @@ function toApiError(status, problem) {
   const { notify, setServiceUnavailable } = useNotificationStore.getState();
   if (status === 401 && session) { signOut(); notify(sessionExpiredMessage); }
   if (status === 403) notify(forbiddenMessage);
-  if (status >= 500) setServiceUnavailable(true);
+  if (status >= 500 && problem?.code !== 'EMAIL_VERIFICATION_UNAVAILABLE') setServiceUnavailable(true);
   const message = codeMessages[problem?.code] ?? (status >= 500 ? unavailableMessage : problem?.title) ?? fallbackMessage;
   return new ApiError(status, problem?.code, message, toFieldErrors(problem?.errors));
 }
