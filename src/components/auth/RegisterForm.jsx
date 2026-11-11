@@ -867,6 +867,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
           transition={{ duration: 0.25 }}
         >
           <DniScanStep
+            dni={watch("dni") || getValues("dni")}
             onComplete={() => setStep(6)}
             onBack={() => setStep(4)}
             onCancel={onCancel}
