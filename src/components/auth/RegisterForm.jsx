@@ -10,7 +10,6 @@ import {
   Check,
   CheckCircle2,
   Circle,
-  FlaskConical,
   IdCard,
   Info,
   Loader2,
@@ -88,14 +87,6 @@ const registerSchema = z
       path: ["confirmPassword"],
     },
   );
-
-const MOCK_EXISTING_EMAILS = [
-  "yaexiste@test.com",
-  "duplicado@test.com",
-  "repetido@padi.com",
-];
-
-const MOCK_EXISTING_DNIS = ["11111111", "99999999"];
 
 export default function RegisterForm({
   onRegistered,
@@ -195,38 +186,10 @@ export default function RegisterForm({
     const isTestEnv =
       typeof process !== "undefined" &&
       process.env?.NODE_ENV === "test";
-    const delay = isTestEnv ? 20 : 1600;
-
-    if (
-      import.meta.env.DEV &&
-      (MOCK_EXISTING_DNIS.includes(dniVal) ||
-        dniVal === "11111111" ||
-        dniVal?.endsWith("999"))
-    ) {
-      setServerError(
-        "Este DNI ya está registrado. Revisá el número o iniciá sesión con tu cuenta.",
-      );
-      setDniValidationState("error");
-      return;
-    }
+    const delay = isTestEnv ? 20 : 1200;
 
     setServerError("");
     setDniValidationState("validating");
-
-    if (
-      import.meta.env.DEV &&
-      (dniVal === "00000000" ||
-        dniVal === "0" ||
-        dniVal?.startsWith("0"))
-    ) {
-      setTimeout(() => {
-        setDniValidationState("error");
-        setServerError(
-          "Los datos del documento no pudieron ser autenticados ante OpenRENAPER. Revisá el número ingresado.",
-        );
-      }, delay);
-      return;
-    }
 
     try {
       if (!isTestEnv) {
@@ -243,7 +206,7 @@ export default function RegisterForm({
           () => {
             setStep(2);
           },
-          isTestEnv ? 20 : 700,
+          isTestEnv ? 20 : 600,
         );
       }, delay);
     } catch (error) {
@@ -273,18 +236,6 @@ export default function RegisterForm({
     const emailVal = getValues("email")
       .trim()
       .toLowerCase();
-    if (
-      import.meta.env.DEV &&
-      (MOCK_EXISTING_EMAILS.includes(emailVal) ||
-        emailVal.includes("duplicado") ||
-        emailVal.includes("yaexiste"))
-    ) {
-      setServerError(
-        "Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.",
-      );
-      setIsSendingCode(false);
-      return;
-    }
 
     try {
       const response = await api(
@@ -423,35 +374,6 @@ export default function RegisterForm({
     setIsSubmitting(true);
 
     const values = getValues();
-    const dniVal = values.dni?.trim();
-    const emailVal = values.email?.trim().toLowerCase();
-
-    if (
-      import.meta.env.DEV &&
-      (MOCK_EXISTING_DNIS.includes(dniVal) ||
-        dniVal === "11111111" ||
-        dniVal?.endsWith("999"))
-    ) {
-      setServerError(
-        "Este DNI ya está registrado. Revisá el número o iniciá sesión con tu cuenta.",
-      );
-      setStep(1);
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (
-      import.meta.env.DEV &&
-      emailVal.includes("finalduplicado")
-    ) {
-      setServerError(
-        "Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.",
-      );
-      setStep(2);
-      setIsSubmitting(false);
-      return;
-    }
-
     const body = {
       firstName: values.firstName.trim(),
       lastName: values.lastName.trim(),
@@ -552,113 +474,7 @@ export default function RegisterForm({
 
   return (
     <div>
-      {import.meta.env.DEV && (
-        <div className='mb-4 rounded-2xl border border-[#5B2EE0]/30 bg-[#F3F1F9] p-3 text-xs text-[#2A0E7A] shadow-xs dark:border-[#261E3D] dark:bg-[#1E1735] dark:text-[#F4F2FA]'>
-          <div className='flex items-center justify-between font-semibold'>
-            <span className='inline-flex items-center gap-1.5 text-[#5B2EE0] dark:text-[#9D97B5]'>
-              <FlaskConical className='size-4 text-[#5B2EE0] dark:text-[#8C87A3]' />
-              Panel de Pruebas Estáticas (Sin Backend)
-            </span>
-            <span className='font-mono text-[10px] text-[#8C87A3]'>
-              Paso {step} de 6
-            </span>
-          </div>
-          <div className='mt-2 flex flex-wrap gap-1.5'>
-            <button
-              type='button'
-              onClick={() => {
-                setValue("email", "yaexiste@test.com");
-                setServerError(
-                  "Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.",
-                );
-                setStep(2);
-              }}
-              className='cursor-pointer rounded-lg bg-white px-2.5 py-1 font-medium text-rose-600 shadow-xs hover:bg-rose-50 dark:bg-[#281F45] dark:text-rose-300 dark:hover:bg-[#342959]'
-            >
-              Probar error Email
-            </button>
-            <button
-              type='button'
-              onClick={() => {
-                setValue("dni", "11111111");
-                setDniValidationState("error");
-                setServerError(
-                  "Este DNI ya está registrado. Revisá el número o iniciá sesión con tu cuenta.",
-                );
-                setStep(1);
-              }}
-              className='cursor-pointer rounded-lg bg-white px-2.5 py-1 font-medium text-rose-600 shadow-xs hover:bg-rose-50 dark:bg-[#281F45] dark:text-rose-300 dark:hover:bg-[#342959]'
-            >
-              Probar DNI Duplicado
-            </button>
-            <button
-              type='button'
-              onClick={() => {
-                setValue("firstName", "Juan");
-                setValue("lastName", "Gómez");
-                setValue("dni", "00000000");
-                setStep(1);
-                setDniValidationState("validating");
-                setServerError("");
-                setTimeout(() => {
-                  setDniValidationState("error");
-                  setServerError(
-                    "Los datos del documento no pudieron ser autenticados ante OpenRENAPER. Revisá el número ingresado.",
-                  );
-                }, 1400);
-              }}
-              className='cursor-pointer rounded-lg bg-white px-2.5 py-1 font-medium text-amber-700 shadow-xs hover:bg-amber-50 dark:bg-[#281F45] dark:text-amber-300 dark:hover:bg-[#342959]'
-            >
-              Probar DNI Fallo OpenRENAPER
-            </button>
-            <button
-              type='button'
-              onClick={() => {
-                setValue("firstName", "Juan");
-                setValue("lastName", "Gómez");
-                setValue("dni", "40123456");
-                setStep(1);
-                setDniValidationState("validating");
-                setServerError("");
-                setTimeout(() => {
-                  setDniValidationState("success");
-                }, 1400);
-              }}
-              className='cursor-pointer rounded-lg bg-white px-2.5 py-1 font-medium text-emerald-700 shadow-xs hover:bg-emerald-50 dark:bg-[#281F45] dark:text-emerald-300 dark:hover:bg-[#342959]'
-            >
-              Probar Luz Verde y Éxito
-            </button>
-            <button
-              type='button'
-              onClick={() => {
-                setValue("firstName", "Prueba");
-                setValue("lastName", "Estática");
-                setValue("dni", "40123456");
-                setValue("email", "prueba@padi.com");
-                setValue("password", "ClaveSegura1");
-                setValue("confirmPassword", "ClaveSegura1");
-                setServerError("");
-                setStep(5);
-              }}
-              className='cursor-pointer rounded-lg bg-[#5B2EE0] px-2.5 py-1 font-medium text-white shadow-xs hover:bg-[#6C3BF4]'
-            >
-              Ir a Escaneo DNI (Paso 5)
-            </button>
-            <button
-              type='button'
-              onClick={() => {
-                setDniValidationState("idle");
-                setServerError("");
-                setToast("");
-                setStep(1);
-              }}
-              className='cursor-pointer rounded-lg bg-white px-2.5 py-1 font-medium text-[#4A4560] shadow-xs hover:bg-[#FAF8FE] dark:bg-[#281F45] dark:text-[#9D97B5]'
-            >
-              Reiniciar al Paso 1
-            </button>
-          </div>
-        </div>
-      )}
+
       <div className='mb-4 flex items-center justify-between'>
         <div className='flex items-center gap-1.5'>
           {[1, 2, 3, 4, 5, 6].map((i) => (
