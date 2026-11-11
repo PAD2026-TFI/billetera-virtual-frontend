@@ -241,8 +241,8 @@ export default function MovementReceipt({ movement, onClose }) {
 function ReceiptRow({ label, children }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <dt className="text-[#6E6888] dark:text-[#9D97B5]">{label}</dt>
-      <dd className="m-0 text-right font-medium text-[#1C1633] dark:text-[#F4F2FA]">{children}</dd>
+      <dt className="shrink-0 text-[#6E6888] dark:text-[#9D97B5]">{label}</dt>
+      <dd className="m-0 min-w-0 text-right font-medium break-words text-[#1C1633] dark:text-[#F4F2FA]">{children}</dd>
     </div>
   );
 }
