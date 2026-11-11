@@ -167,7 +167,7 @@ export default function RecipientStep({ account, onConfirm }) {
   }
 
   return (
-    <div className="m-0 flex flex-col gap-4 border-0 bg-transparent p-0 animate-page-enter">
+    <div className="m-0 flex min-h-0 flex-1 flex-col gap-4 border-0 bg-transparent p-0 animate-page-enter">
       <form
         onSubmit={handleSubmit((values) => search(values.destination))}
         noValidate
@@ -184,14 +184,14 @@ export default function RecipientStep({ account, onConfirm }) {
             id="destination"
             autoComplete="off"
             placeholder="Alias o CVU de 22 dígitos"
-            className={`${fieldInputClass} h-12 w-full flex-1 bg-white px-4 text-base sm:text-sm dark:bg-[#120D20]`}
+            className={`${fieldInputClass} h-13 sm:h-12 w-full flex-1 bg-white px-4 text-base sm:text-sm dark:bg-[#120D20]`}
             aria-invalid={!!errors.destination}
             {...register("destination")}
           />
           <button
             type="submit"
             disabled={searching}
-            className="m-0 inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#5B2EE0] px-5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4C1DB8] disabled:opacity-50 sm:w-auto dark:bg-[#5B2EE0] dark:hover:bg-[#6C3BF4]"
+            className="m-0 inline-flex h-13 sm:h-12 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#5B2EE0] px-5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4C1DB8] disabled:opacity-50 sm:w-auto dark:bg-[#5B2EE0] dark:hover:bg-[#6C3BF4]"
           >
             {searching ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -202,7 +202,7 @@ export default function RecipientStep({ account, onConfirm }) {
           </button>
         </div>
         {errors.destination && (
-          <p role="alert" className="m-0 text-xs font-medium text-rose-500 dark:text-rose-400">
+          <p role="alert" className="m-0 text-xs font-medium text-rose-500">
             {errors.destination.message}
           </p>
         )}
@@ -263,7 +263,7 @@ export default function RecipientStep({ account, onConfirm }) {
       <div
         role="region"
         aria-label="Contactos frecuentes"
-        className="m-0 flex flex-col gap-2.5 border-0 bg-transparent p-0"
+        className="m-0 flex flex-1 flex-col gap-2.5 border-0 bg-transparent p-0"
       >
         <div className="flex items-center justify-between">
           <h3 className="m-0 text-xs font-semibold tracking-wider text-[#6E6888] uppercase dark:text-[#9D97B5]">

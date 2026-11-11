@@ -35,7 +35,7 @@ const navIndexMap = {
 };
 
 export const panelClass =
-  'rounded-[24px] bg-white p-5 dark:border dark:border-[#261E3D] dark:bg-[#140F24] lg:rounded-[28px] lg:p-7 lg:shadow-[0_24px_60px_-32px_rgba(58,18,153,0.35)] lg:dark:shadow-none';
+  'rounded-[24px] bg-white p-5 dark:bg-[#140F24] lg:rounded-[28px] lg:p-7 lg:shadow-[0_24px_60px_-32px_rgba(58,18,153,0.35)] lg:dark:border lg:dark:border-[#261E3D] lg:dark:bg-[#140F24] lg:dark:shadow-none';
 
 export default function AppLayout({ header, children, fitViewportMobile = false }) {
   const { summary, status, loadSummary } = useWalletStore();
@@ -113,7 +113,7 @@ export default function AppLayout({ header, children, fitViewportMobile = false 
       {renderSlot(header, summary)}
       <main
         className={`m-0 ${
-          fitViewportMobile ? 'mt-2 flex flex-1 min-h-0 flex-col lg:mt-8' : 'mt-7 lg:mt-8'
+          fitViewportMobile ? 'mt-2 flex flex-1 min-h-0 flex-col lg:mt-10' : 'mt-7 lg:mt-10'
         } max-w-none p-0 flex-1 min-h-0`}
       >
         {renderSlot(children, summary)}
@@ -171,7 +171,7 @@ export default function AppLayout({ header, children, fitViewportMobile = false 
         }`}
       >
         <div aria-hidden="true" className="pointer-events-none absolute -top-[420px] left-1/2 size-[820px] -translate-x-1/2 rounded-full bg-[#E6DFFB] lg:hidden dark:bg-[#140F24]" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 hidden h-64 overflow-hidden bg-[#3A1299] lg:block dark:hidden">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 hidden h-64 overflow-hidden bg-[#3A1299] lg:block">
           {bandStripes.map(stripe => (
             <span
               key={stripe.left}
@@ -184,8 +184,8 @@ export default function AppLayout({ header, children, fitViewportMobile = false 
         <div
           className={`relative mx-auto w-full max-w-6xl ${
             fitViewportMobile
-              ? 'flex h-full flex-1 min-h-0 flex-col px-4 pt-3 pb-2 sm:px-6 lg:h-auto lg:px-10 lg:pt-8 lg:pb-0'
-              : 'px-5 pt-6 sm:px-8 lg:px-10 lg:pt-8'
+              ? 'flex h-full flex-1 min-h-0 flex-col px-4 pt-3 pb-2 sm:px-6 lg:h-auto lg:px-10 lg:pt-10 lg:pb-0'
+              : 'px-5 pt-6 sm:px-8 lg:px-10 lg:pt-10'
           }`}
         >
           {status === 'error' && (
@@ -243,13 +243,13 @@ export function PageHeader({ title, subtitle, showProfile = true, compactMobile 
         <h1
           className={`m-0 leading-tight font-bold tracking-tight ${
             compactMobile ? 'text-lg lg:text-[32px]' : 'text-[28px] lg:text-[32px]'
-          } text-[#1C1633] lg:text-white dark:text-[#F4F2FA] lg:dark:text-[#F4F2FA]`}
+          } lg:text-white`}
         >
           {title}
         </h1>
         {subtitle && (
           <p
-            className={`mt-1 mb-0 text-sm text-[#4A4560] lg:text-white/75 dark:text-[#9D97B5] lg:dark:text-[#9D97B5] ${
+            className={`mt-1 mb-0 text-sm text-[#4A4560] lg:text-white/75 dark:text-[#9D97B5] lg:dark:text-white/75 ${
               compactMobile ? 'hidden lg:block' : ''
             }`}
           >
