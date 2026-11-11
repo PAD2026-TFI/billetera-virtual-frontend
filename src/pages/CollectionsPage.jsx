@@ -214,8 +214,8 @@ function CollectionsContent({ summary }) {
     : null;
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-12">
-      <section className={`lg:col-span-5 ${panelClass} flex flex-col gap-4`}>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-stretch">
+      <section className={`min-w-0 lg:col-span-5 ${panelClass} flex flex-col gap-4`}>
         <div>
           <div className="flex items-center gap-2 text-[#4C1DB8] dark:text-[#FFD54A]">
             <Sparkles className="size-5" />
@@ -285,7 +285,7 @@ function CollectionsContent({ summary }) {
           </form>
         </div>
 
-        <div className="rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] p-3 text-xs text-[#6E6888] dark:border-[#261E3D] dark:bg-[#19122C] dark:text-[#9D97B5]">
+        <div className="mt-auto rounded-2xl border border-[#ECE9F5] bg-[#FAF9FE] p-3 text-xs text-[#6E6888] dark:border-[#261E3D] dark:bg-[#19122C] dark:text-[#9D97B5]">
           <p className="m-0 flex items-center gap-2 font-semibold text-[#1C1633] dark:text-white">
             <ShieldCheck className="size-4 text-emerald-500" />
             Acreditación inmediata
@@ -296,7 +296,7 @@ function CollectionsContent({ summary }) {
         </div>
       </section>
 
-      <section className={`lg:col-span-7 ${panelClass} flex flex-col gap-4`}>
+      <section className={`min-w-0 lg:col-span-7 ${panelClass} flex flex-col gap-4`}>
         {activeLink ? (
           (() => {
             const isActivePaid = activeLink.status === 'Paid' || activeLink.status === 'Completed';
@@ -424,8 +424,8 @@ function CollectionsContent({ summary }) {
           })()
         ) : (
             <div className="grid place-items-center rounded-[24px] border border-dashed border-[#DFD9F0] bg-[#FAF9FE] p-6 text-center dark:border-[#2C2247] dark:bg-[#161028]">
-              <span className="grid size-14 place-items-center rounded-2xl bg-[#EDE7FC] text-[#5B2EE0] dark:bg-[#281F45] dark:text-[#FFD54A]">
-                <QrCode className="size-7" />
+              <span className="grid size-28 place-items-center rounded-[28px] bg-[#EDE7FC] text-[#5B2EE0] dark:bg-[#281F45] dark:text-[#FFD54A]">
+                <QrCode className="size-16" />
               </span>
               <h3 className="m-0 mt-3 text-sm font-bold text-[#1C1633] dark:text-white">
                 Todavía no generaste un cobro
