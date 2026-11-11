@@ -67,12 +67,12 @@ function TransferContent({ summary }) {
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_350px] lg:items-stretch lg:gap-7">
       <section
         aria-label="Transferencia"
-        className={`m-0 flex flex-col justify-between gap-4 p-4 sm:p-6 lg:gap-6 lg:p-7 ${panelClass}`}
+        className={`m-0 flex flex-col justify-start gap-4 p-4 sm:p-6 lg:gap-6 lg:p-7 ${panelClass}`}
       >
         <TransferStepper current={step} />
         {step < 3 && <h2 className={`${sectionTitleClass} m-0 tracking-tight`}>{stepTitles[step]}</h2>}
 
-        <div className="flex flex-col justify-between gap-4">
+        <div className="flex min-h-0 flex-1 flex-col justify-start gap-4">
           {step === 0 && (
             <RecipientStep
               account={summary.account}
