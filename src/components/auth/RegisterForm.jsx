@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -169,7 +170,16 @@ export default function RegisterForm({ onRegistered, onCancel }) {
       setStep(3);
       otpRefs.current[0]?.focus();
     } catch (error) {
-      setServerError(error.message || "No pudimos enviar el código. Reintentá en unos minutos.");
+      if ((error.code === "EMAIL_VERIFICATION_UNAVAILABLE" || error.status === 503 || error.code === "NETWORK_ERROR") && import.meta.env.DEV) {
+        setCountdown(60);
+        setToast("Modo local: el servicio de correo no está activo. Código de prueba: 123456");
+        setOtp(["", "", "", "", "", ""]);
+        setVerificationToken("");
+        setStep(3);
+        otpRefs.current[0]?.focus();
+      } else {
+        setServerError(error.message || "No pudimos enviar el código. Reintentá en unos minutos.");
+      }
     } finally {
       setIsSendingCode(false);
     }
@@ -191,7 +201,12 @@ export default function RegisterForm({ onRegistered, onCancel }) {
       setVerificationToken(response.verificationToken);
       setToast("");
     } catch (error) {
-      setServerError(error.message || "No pudimos verificar el código.");
+      if (import.meta.env.DEV && code === "123456") {
+        setVerificationToken("0".repeat(64));
+        setToast("");
+      } else {
+        setServerError(error.message || "No pudimos verificar el código.");
+      }
     } finally {
       setIsVerifying(false);
     }
@@ -354,8 +369,9 @@ export default function RegisterForm({ onRegistered, onCancel }) {
       </AnimatePresence>
 
       {serverError && step !== 4 && (
-        <p role="alert" className={cn(alertClass, "mb-3")}>
-          {serverError}
+        <p role="alert" className={cn(alertClass, "mb-3 flex items-center gap-2.5")}>
+          <AlertCircle className="size-4 shrink-0 text-red-700 dark:text-rose-300" />
+          <span>{serverError}</span>
         </p>
       )}
 
@@ -811,8 +827,9 @@ export default function RegisterForm({ onRegistered, onCancel }) {
             </div>
 
             {serverError && (
-              <p role="alert" className={alertClass}>
-                {serverError}
+              <p role="alert" className={cn(alertClass, "flex items-center gap-2.5")}>
+                <AlertCircle className="size-4 shrink-0 text-red-700 dark:text-rose-300" />
+                <span>{serverError}</span>
               </p>
             )}
 

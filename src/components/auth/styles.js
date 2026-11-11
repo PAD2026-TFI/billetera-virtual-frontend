@@ -12,4 +12,6 @@ export const primaryButtonClass =
 export const secondaryButtonClass =
   'm-0 h-11 w-full rounded-full border-0 bg-[#F3F1F9] text-[15px] font-semibold text-[#4C1DB8] shadow-none hover:bg-[#E9E5F6]';
 
-export const alertClass = 'm-0 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700';
+export const alertClass =
+  'm-0 rounded-xl border border-red-300 bg-red-100/80 px-4 py-3 text-sm font-semibold text-red-950 shadow-xs ' +
+  'dark:border-rose-500/60 dark:bg-[#2D121A] dark:text-rose-100';
