@@ -50,10 +50,10 @@ export class ApiError extends Error {
 }
 const fieldName = key => { const name = key.split('.').at(-1); return name.charAt(0).toLowerCase() + name.slice(1); };
 const toFieldErrors = errors => Object.fromEntries(Object.entries(errors ?? {}).map(([key, [message]]) => [fieldName(key), message]));
-function toApiError(status, problem) {
+function toApiError(status, problem, authenticated) {
   const { session, signOut } = useAuthStore.getState();
   const { notify, setServiceUnavailable } = useNotificationStore.getState();
-  if (status === 401 && session) { signOut(); notify(sessionExpiredMessage); }
+  if (status === 401 && session && authenticated) { signOut(); notify(sessionExpiredMessage); }
   if (status === 403) notify(forbiddenMessage);
   if (status >= 500 && problem?.code !== 'EMAIL_VERIFICATION_UNAVAILABLE') setServiceUnavailable(true);
   const message = codeMessages[problem?.code] ?? (status >= 500 ? unavailableMessage : problem?.title) ?? fallbackMessage;
@@ -72,7 +72,7 @@ export async function api(path, { token = useAuthStore.getState().session?.token
     throw new ApiError(0, 'NETWORK_ERROR', unavailableMessage);
   }
   const data = await response.json().catch(() => null);
-  if (!response.ok) throw toApiError(response.status, data);
+  if (!response.ok) throw toApiError(response.status, data, Boolean(token));
   useNotificationStore.getState().setServiceUnavailable(false);
   return data;
 }
