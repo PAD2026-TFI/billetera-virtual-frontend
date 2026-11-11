@@ -186,11 +186,6 @@ export default function ForgotPasswordForm({ onBack }) {
     const { register, handleSubmit, formState: { errors } } = emailForm;
     return (
       <div>
-        <button type="button" onClick={onBack} className={backLinkClass}>
-          <ArrowLeft className="size-3.5" />
-          Volver
-        </button>
-
         <h1 className="m-0 text-[26px] font-bold tracking-tight text-[#2A0E7A] lg:text-[30px]">
           Recuperar contraseña
         </h1>
