@@ -61,6 +61,13 @@ describe('manejo centralizado de errores', () => {
     expect(useAuthStore.getState().session).toBeNull();
     expect(toastTitles()).toEqual(['Tu sesión venció. Iniciá sesión de nuevo.']);
   });
+  it('un 401 de un pedido sin sesión no cierra la sesión abierta', async () => {
+    useAuthStore.setState({ session: { token: 'jwt', user: {}, expiresAt: Date.now() + 60000 } });
+    respond(401, { title: 'Unauthorized', code: 'HTTP_401' });
+    await expect(api('/api/v1/auth/password-reset', { token: null, method: 'POST', body: {} })).rejects.toMatchObject({ status: 401 });
+    expect(useAuthStore.getState().session).not.toBeNull();
+    expect(toastTitles()).toEqual([]);
+  });
   it('un 403 muestra un aviso de permisos', async () => {
     respond(403, { title: 'Acceso denegado', code: 'ACCESS_DENIED' });
     await expect(api('/api/wallets/me')).rejects.toMatchObject({ status: 403 });
