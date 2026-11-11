@@ -21,6 +21,12 @@ import { alertClass, inputClass, labelClass, primaryButtonClass, secondaryButton
 
 const emptyCode = ['', '', '', '', '', ''];
 
+const unavailableCodes = ['HTTP_401', 'HTTP_404', 'HTTP_405', 'PASSWORD_RESET_UNAVAILABLE'];
+const unavailableMessage = 'La recuperación de contraseña no está disponible en este momento. Probá de nuevo más tarde.';
+
+const describeError = (error, fallback) =>
+  unavailableCodes.includes(error?.code) ? unavailableMessage : error?.message || fallback;
+
 const emailSchema = z.object({
   email: z
     .string()
@@ -102,7 +108,7 @@ export default function ForgotPasswordForm({ onBack }) {
       setNotice('Si el correo tiene una cuenta en padi., te va a llegar un código.');
       setStep('reset');
     } catch (error) {
-      setServerError(error.message || 'No pudimos enviar el código. Reintentá en unos minutos.');
+      setServerError(describeError(error, 'No pudimos enviar el código. Reintentá en unos minutos.'));
     } finally {
       setIsSending(false);
     }
@@ -126,7 +132,7 @@ export default function ForgotPasswordForm({ onBack }) {
         setCode(emptyCode);
         codeRefs.current[0]?.focus();
       }
-      setServerError(error.fieldErrors?.newPassword || error.message || 'No pudimos cambiar la contraseña.');
+      setServerError(error.fieldErrors?.newPassword || describeError(error, 'No pudimos cambiar la contraseña.'));
     }
   }
 

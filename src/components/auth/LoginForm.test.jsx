@@ -130,4 +130,15 @@ describe('ForgotPasswordForm', () => {
     fireEvent.change(screen.getByLabelText('Dígito 1'), { target: { value: '654321' } });
     expect([1, 2, 3, 4, 5, 6].map(i => screen.getByLabelText(`Dígito ${i}`).value).join('')).toBe('654321');
   });
+
+  it('explica en español si el servidor todavía no tiene la recuperación', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(json({ title: 'Unauthorized', code: 'HTTP_401' }, 401));
+    const user = userEvent.setup();
+    render(<ForgotPasswordForm onBack={() => {}} />);
+
+    await user.type(screen.getByLabelText('Correo electrónico'), 'usuario@test.com');
+    await user.click(screen.getByRole('button', { name: 'Enviar código' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('La recuperación de contraseña no está disponible en este momento.');
+    expect(screen.queryByText('Unauthorized')).not.toBeInTheDocument();
+  });
 });
