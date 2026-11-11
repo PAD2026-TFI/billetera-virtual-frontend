@@ -280,7 +280,12 @@ export default function RegisterForm({ onRegistered, onCancel }) {
       });
       setShowSuccessModal(true);
     } catch (error) {
-      setServerError(error.message || "Ocurrió un error al registrar la cuenta.");
+      const message =
+        error.fieldErrors?.dni ||
+        error.fieldErrors?.email ||
+        error.message ||
+        "Ocurrió un error al registrar la cuenta.";
+      setServerError(message);
       if (error.code === "EMAIL_VERIFICATION_REQUIRED") {
         setVerificationToken("");
         setOtp(["", "", "", "", "", ""]);
@@ -288,6 +293,7 @@ export default function RegisterForm({ onRegistered, onCancel }) {
         setStep(3);
       } else if (error.code === "EMAIL_ALREADY_REGISTERED" || error.fieldErrors?.email) {
         setVerificationToken("");
+        setOtp(["", "", "", "", "", ""]);
         setStep(2);
       } else if (error.code === "DNI_ALREADY_REGISTERED" || error.fieldErrors?.dni) {
         setStep(1);

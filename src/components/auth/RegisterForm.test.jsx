@@ -87,6 +87,23 @@ describe('RegisterForm', () => {
     });
   });
 
+  it('muestra el error de correo ya registrado al solicitar el código', async () => {
+    const user = userEvent.setup();
+    api.mockRejectedValueOnce(Object.assign(
+      new Error('Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.'),
+      { code: 'EMAIL_ALREADY_REGISTERED' },
+    ));
+    render(<RegisterForm />);
+    await completePersonalData(user);
+    await user.type(await screen.findByLabelText('Correo electrónico'), 'ana@test.com');
+    await user.click(screen.getByRole('button', { name: 'Enviar código' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.',
+    );
+    expect(screen.getByRole('heading', { name: 'Tu correo electrónico' })).toBeInTheDocument();
+  });
+
   it('exige una contraseña segura que coincida y permite mostrarla', async () => {
     const user = userEvent.setup();
     render(<RegisterForm />);
@@ -138,5 +155,57 @@ describe('RegisterForm', () => {
       expect.objectContaining({ firstName: 'Ana', lastName: 'Pérez', email: 'ana@test.com', dni: '40123456' }),
       { email: 'ana@test.com', password: 'ClaveSegura1' },
     ));
+  });
+
+  it('muestra el error de DNI ya registrado y vuelve a los datos personales', async () => {
+    const user = userEvent.setup();
+    api.mockResolvedValueOnce({ retryAfterSeconds: 60 })
+      .mockResolvedValueOnce({ verificationToken: proof })
+      .mockRejectedValueOnce(Object.assign(
+        new Error('Este DNI ya está registrado. Revisá el número o iniciá sesión con tu cuenta.'),
+        { code: 'DNI_ALREADY_REGISTERED' },
+      ));
+    render(<RegisterForm />);
+    await completePersonalData(user);
+    await verifyEmail(user);
+    await createPassword(user);
+
+    await user.click(await screen.findByRole('button', { name: 'Capturar frente del DNI' }));
+    await user.click(await screen.findByRole('button', { name: 'Capturar dorso del DNI' }, slow));
+    await user.click(await screen.findByRole('button', { name: 'Continuar a validación facial' }, slow));
+    await user.click(await screen.findByRole('button', { name: 'Iniciar escaneo facial' }));
+    await user.click(await screen.findByRole('button', { name: 'Finalizar registro' }, slow));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Este DNI ya está registrado. Revisá el número o iniciá sesión con tu cuenta.',
+    );
+    expect(screen.getByRole('heading', { name: 'Crear cuenta' })).toBeInTheDocument();
+    expect(screen.getByLabelText('DNI')).toHaveValue('40123456');
+  });
+
+  it('muestra el error de correo ya registrado en el envío final y vuelve al paso de correo', async () => {
+    const user = userEvent.setup();
+    api.mockResolvedValueOnce({ retryAfterSeconds: 60 })
+      .mockResolvedValueOnce({ verificationToken: proof })
+      .mockRejectedValueOnce(Object.assign(
+        new Error('Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.'),
+        { code: 'EMAIL_ALREADY_REGISTERED' },
+      ));
+    render(<RegisterForm />);
+    await completePersonalData(user);
+    await verifyEmail(user);
+    await createPassword(user);
+
+    await user.click(await screen.findByRole('button', { name: 'Capturar frente del DNI' }));
+    await user.click(await screen.findByRole('button', { name: 'Capturar dorso del DNI' }, slow));
+    await user.click(await screen.findByRole('button', { name: 'Continuar a validación facial' }, slow));
+    await user.click(await screen.findByRole('button', { name: 'Iniciar escaneo facial' }));
+    await user.click(await screen.findByRole('button', { name: 'Finalizar registro' }, slow));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.',
+    );
+    expect(screen.getByRole('heading', { name: 'Tu correo electrónico' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Correo electrónico')).toHaveValue('ana@test.com');
   });
 });
