@@ -192,13 +192,11 @@ export default function RegisterForm({
     setDniValidationState("validating");
 
     try {
-      if (!isTestEnv) {
-        await api("/api/v1/auth/validate-identity", {
-          method: "POST",
-          token: null,
-          body: { firstName, lastName, dni: dniVal },
-        });
-      }
+      // Conexión con OpenRENAPER deshabilitada temporalmente en el frontend:
+      // no se llama a /api/v1/auth/validate-identity.
+      void firstName;
+      void lastName;
+      void dniVal;
 
       setTimeout(() => {
         setDniValidationState("success");

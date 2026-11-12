@@ -26,7 +26,7 @@ import {
 } from '@/components/forms/formStyles';
 import { formatCurrency, formatDateTime } from '@/lib/formatters';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/money';
-import { api, API_BASE } from '@/services/api';
+import { api } from '@/services/api';
 import { registerMockPaymentLink } from '@/services/mocks/checkoutService';
 import { isLiveSession } from '@/services/mocks/walletService';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -120,11 +120,12 @@ function CollectionsContent({ summary }) {
   }, [activeLink?.token, activeLink?.status]);
 
   useEffect(() => {
-    if (!activeLink || isLiveSession()) {
+    if (!activeLink) {
       setMockQrUrl('');
       return;
     }
     const targetUrl = activeLink.checkoutUrl || `${window.location.origin}/checkout?token=${activeLink.token}`;
+    let cancelled = false;
     QRCode.toDataURL(targetUrl, {
       width: 256,
       margin: 1,
@@ -133,9 +134,10 @@ function CollectionsContent({ summary }) {
         light: '#FFFFFF',
       },
     })
-      .then(url => setMockQrUrl(url))
-      .catch(() => setMockQrUrl(''));
-  }, [activeLink]);
+      .then(url => { if (!cancelled) setMockQrUrl(url); })
+      .catch(() => { if (!cancelled) setMockQrUrl(''); });
+    return () => { cancelled = true; };
+  }, [activeLink?.token, activeLink?.checkoutUrl]);
 
   async function handleCreateCollection(e) {
     e.preventDefault();
@@ -207,11 +209,7 @@ function CollectionsContent({ summary }) {
     }
   }
 
-  const qrImageUrl = activeLink
-    ? isLiveSession()
-      ? `${API_BASE}/api/v1/public/payment-links/${activeLink.token}/qr`
-      : mockQrUrl
-    : null;
+  const qrImageUrl = activeLink ? mockQrUrl : null;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-stretch">
